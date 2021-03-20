@@ -4,6 +4,8 @@
 import Glibc
 
 let system_glob = Glibc.glob
+#elseif os(Windows)
+import CRT
 #else
 import Darwin
 
@@ -587,6 +589,10 @@ extension Path {
 
 extension Path {
   public static func glob(_ pattern: String) -> [Path] {
+#if os(Windows)
+    // Windows has no glob support
+    return []
+#else
     var gt = glob_t()
     let cPattern = strdup(pattern)
     defer {
@@ -612,6 +618,7 @@ extension Path {
 
     // GLOB_NOMATCH
     return []
+#endif
   }
 
   public func glob(_ pattern: String) -> [Path] {
