@@ -95,7 +95,11 @@ describe("PathKit") {
     $0.describe("a relative path with tilde") {
       let path = Path("~")
 
-      $0.it("can be converted to an absolute path") {
+      $0.it("can be converted to an absolute path") {        
+        #if os(Windows)
+          throw skip()
+        #endif
+
         #if os(Linux)
           if NSUserName() == "root" {
             try expect(path.absolute()) == "/root"		
@@ -109,10 +113,16 @@ describe("PathKit") {
       }
 
       $0.it("is not absolute") {
+        #if os(Windows)
+          throw skip()
+        #endif
         try expect(path.isAbsolute) == false
       }
 
       $0.it("is relative") {
+        #if os(Windows)
+          throw skip()
+        #endif
         try expect(path.isRelative) == true
       }
 
@@ -182,19 +192,25 @@ describe("PathKit") {
 
   $0.describe("symlinking") {
     $0.it("can create a symlink with a relative destination") {
+      #if os(Windows)
+        throw skip()
+      #endif
       let path = fixtures + "symlinks/file"
       let resolvedPath = try path.symlinkDestination()
       try expect(resolvedPath.normalize()) == fixtures + "file"
     }
 
     $0.it("can create a symlink with an absolute destination") {
+      #if os(Windows)
+        throw skip()
+      #endif
       let path = fixtures + "symlinks/swift"
       let resolvedPath = try path.symlinkDestination()
       try expect(resolvedPath) == Path("/usr/bin/swift")
     }
 
     $0.it("can create a relative symlink in the same directory") {
-      #if os(Linux)
+      #if os(Linux) || os(Windows)
         throw skip()
       #else
         let path = fixtures + "symlinks/same-dir"
@@ -244,6 +260,9 @@ describe("PathKit") {
     }
 
     $0.it("can test if a path is a symlink") {
+      #if os(Windows)
+        throw skip()
+      #endif
       try expect((fixtures + "file/file").isSymlink).to.beFalse()
       try expect((fixtures + "symlinks/file").isSymlink).to.beTrue()
     }
