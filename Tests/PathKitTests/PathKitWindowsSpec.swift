@@ -408,10 +408,12 @@ describe("PathKit") {
   }
 
   $0.it("can return the parent directory of a path") {
-    try expect((fixtures + "directory/child").parent()) == fixtures + "directory"
-    try expect((fixtures + "symlinks/directory").parent()) == fixtures + "symlinks"
-    try expect((fixtures + "directory/..").parent()) == fixtures + "directory/../.."
-    try expect(Path("/").parent()) == "/"
+    try expect((fixtures + "directory\\child").parent()) == fixtures + "directory"
+    #if !os(Windows)
+    try expect((fixtures + "symlinks\\directory").parent()) == fixtures + "symlinks"
+    #endif
+    try expect((fixtures + "directory\\..").parent()) == fixtures + "directory\\..\\.."
+    try expect(Path("C:").parent()) == "C:"
   }
 
   $0.it("can return the children") {
@@ -442,13 +444,13 @@ describe("PathKit") {
       }
 
       try expect(children.isEmpty).to.beTrue()
-      try expect(Path("/non/existing/directory/path").makeIterator().next()).to.beNil()
+      try expect(Path("C:\\non\\existing\\directory\\path").makeIterator().next()).to.beNil()
     }
   
     $0.it("with options") {
-      #if os(Linux)
+      #if os(Windows)
       throw skip()
-      #else
+      #else      
       let path = fixtures + "directory"
       var children = ["child", "subdirectory"].map { path + $0 }
       let generator = path.iterateChildren(options: .skipsHiddenFiles).makeIterator()
@@ -468,9 +470,8 @@ describe("PathKit") {
   }
 
   $0.it("can be pattern matched") {
-    try expect(Path("/var") ~= "~").to.beFalse()
-    try expect(Path("/Users") ~= "/Users").to.beTrue()
-    try expect((Path.home + "..") ~= "~/..").to.beTrue()
+    try expect(Path("C:\\Windows") ~= "C:").to.beFalse()
+    try expect(Path("C:\\Users") ~= "C:\\Users").to.beTrue()
   }
 
   $0.it("can be compared") {
