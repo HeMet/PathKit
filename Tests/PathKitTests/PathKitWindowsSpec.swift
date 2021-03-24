@@ -1,4 +1,4 @@
-#if !os(Windows)
+#if os(Windows)
 import Foundation
 import Spectre
 @testable import PathKit
@@ -15,6 +15,14 @@ describe("PathKit") {
 
   $0.before {
     Path.current = Path(filePath).parent()
+  }
+
+  $0.it("converts Windows path to Unix path") {
+    try expect("c:".unixPath) == "/c:"
+    try expect("c:\\".unixPath) == "/c:"
+    try expect("c:\\Temp".unixPath) == "/c:/Temp"
+    try expect("c:\\Temp\\".unixPath) == "/c:/Temp"
+    try expect("Temp\\dir".unixPath) == "Temp/dir"
   }
 
   $0.it("provides the system separator") {

@@ -39,7 +39,11 @@ public struct Path {
   }
     
   internal init(_ path: String, fileSystemInfo: FileSystemInfo) {
+    #if os(Windows)
+    self.path = path.unixPath
+    #else
     self.path = path
+    #endif
     self.fileSystemInfo = fileSystemInfo
   }
 
@@ -801,5 +805,20 @@ internal func +(lhs: String, rhs: String) -> Path {
 extension Array {
   var fullSlice: ArraySlice<Element> {
     return self[self.indices.suffix(from: 0)]
+  }
+}
+
+extension String {
+  internal var unixPath: String {
+    if isEmpty { return self }
+
+    var comps = components(separatedBy: "\\").filter{ !$0.isEmpty }
+    var result = comps.joined(separator: Path.separator)
+    let firstComp = comps[0]
+    if firstComp.count >= 2 && firstComp[firstComp.index(after: firstComp.startIndex)] == ":" {
+      result.insert(contentsOf: Path.separator, at: result.startIndex)
+    }
+    
+    return result
   }
 }
