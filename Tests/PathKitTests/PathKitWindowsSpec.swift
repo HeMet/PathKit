@@ -17,6 +17,17 @@ describe("PathKit") {
     Path.current = Path(filePath).parent()
   }
 
+  $0.it("can determine disk designator") {
+    try expect("c:".isDiskDesignator) == true
+    try expect("C:".isDiskDesignator) == true
+    try expect("z:".isDiskDesignator) == true
+    try expect("Z:".isDiskDesignator) == true
+    try expect("c".isDiskDesignator) == false
+    try expect("C".isDiskDesignator) == false
+    try expect("1:".isDiskDesignator) == false
+    try expect(":".isDiskDesignator) == false
+  }
+
   $0.it("converts Windows path to Unix path") {
     try expect("c:".unixPath) == "/c:"
     try expect("c:\\".unixPath) == "/c:"
@@ -34,38 +45,40 @@ describe("PathKit") {
     try expect(Path.current.description) == cwd
   }
 
+  let system32 = "C:\\Windows\\System32"
+
   $0.describe("initialisation") {
     $0.it("can be initialised with no arguments") {
       try expect(Path().description) == ""
     }
 
     $0.it("can be initialised with a string") {
-      let path = Path("/usr/bin/swift")
-      try expect(path.description) == "/usr/bin/swift"
+      let path = Path(system32)
+      try expect(path.description) == system32
     }
 
     $0.it("can be initialised with path components") {
-      let path = Path(components: ["/usr", "bin", "swift"])
-      try expect(path.description) == "/usr/bin/swift"
+      let path = Path(components: ["C:", "Windows", "System32"])
+      try expect(path.description) == system32
     }
   }
 
   $0.describe("convertable") {
     $0.it("can be converted from a string literal") {
-      let path: Path = "/usr/bin/swift"
-      try expect(path.description) == "/usr/bin/swift"
+      let path: Path = "C:\\Windows\\System32"
+      try expect(path.description) == system32
     }
 
     $0.it("can be converted to a string description") {
-      try expect(Path("/usr/bin/swift").description) == "/usr/bin/swift"
+      try expect(Path(system32).description) == system32
     }
     
     $0.it("can be converted to a string") {
-      try expect(Path("/usr/bin/swift").string) == "/usr/bin/swift"
+      try expect(Path(system32).string) == system32
     }
     
     $0.it("can be converted to a url") {
-      try expect(Path("/usr/bin/swift").url) == URL(fileURLWithPath: "/usr/bin/swift")
+      try expect(Path(system32).url) == URL(fileURLWithPath: system32)
     }
   }
 

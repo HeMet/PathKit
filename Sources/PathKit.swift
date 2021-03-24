@@ -54,14 +54,27 @@ public struct Path {
   /// Create a Path by joining multiple path components together
   public init<S : Collection>(components: S) where S.Iterator.Element == String {
     let path: String
-    if components.isEmpty {
-      path = "."
-    } else if components.first == Path.separator && components.count > 1 {
-      let p = components.joined(separator: Path.separator)
-      path = String(p[p.index(after: p.startIndex)...])
-    } else {
-      path = components.joined(separator: Path.separator)
-    }
+    #if os(Windows)
+      if components.isEmpty {
+        path = "."
+      } else {
+        let relativePath = components.joined(separator: Path.separator)
+        if components.first?.isDiskDesignator == true {
+          path = Path.separator + relativePath
+        } else {
+          path = relativePath
+        }
+      }
+    #else
+      if components.isEmpty {
+        path = "."
+      } else if components.first == Path.separator && components.count > 1 {
+        let p = components.joined(separator: Path.separator)
+        path = String(p[p.index(after: p.startIndex)...])
+      } else {
+        path = components.joined(separator: Path.separator)
+      }
+    #endif
     self.init(path)
   }
 }
@@ -104,7 +117,11 @@ extension Path : CustomStringConvertible {
 
 extension Path {
   public var string: String {
+    #if os(Windows)
+    return self.path.windowsPath
+    #else
     return self.path
+    #endif
   }
 
   public var url: URL {
@@ -812,6 +829,7 @@ extension Array {
   }
 }
 
+#if os(Windows)
 extension String {
   internal var unixPath: String {
     if isEmpty { return self }
@@ -835,4 +853,9 @@ extension String {
     }
     return result.replacingOccurrences(of: Path.separator, with: "\\")
   }
+
+  internal var isDiskDesignator: Bool {
+    return count == 2 && first!.isASCII && first!.isLetter && last == ":"
+  }
 }
+#endif
