@@ -338,11 +338,11 @@ describe("PathKit") {
       let contents: Data? = try path.read()
       let string = NSString(data:contents! as Data, encoding: String.Encoding.utf8.rawValue)!
 
-      try expect(string) == "Hello World\n"
+      try expect(string) == "Hello World\r\n"
     }
 
     $0.it("errors when you read from a non-existing file as NSData") {
-      let path = Path("/tmp/pathkit-testing")
+      let path = Path("C:\\tmp\\pathkit-testing")
 
       try expect {
         try path.read() as Data
@@ -353,11 +353,11 @@ describe("PathKit") {
       let path = fixtures + "hello"
       let contents: String? = try path.read()
 
-      try expect(contents) == "Hello World\n"
+      try expect(contents) == "Hello World\r\n"
     }
 
     $0.it("errors when you read from a non-existing file as a String") {
-      let path = Path("/tmp/pathkit-testing")
+      let path = Path("C:\\tmp\\pathkit-testing")
 
       try expect {
         try path.read() as String
@@ -367,7 +367,8 @@ describe("PathKit") {
 
   $0.describe("writing") {
     $0.it("can write NSData to a file") {
-      let path = Path("/tmp/pathkit-testing")
+      let temp = NSTemporaryDirectory()
+      let path = Path(temp) + "pathkit-testing"
       let data = "Hi".data(using: String.Encoding.utf8, allowLossyConversion: true)
 
       try expect(path.exists).to.beFalse()
@@ -378,20 +379,18 @@ describe("PathKit") {
     }
 
     $0.it("throws an error on failure writing data") {
-      #if os(Linux)
-      throw skip()
-      #else
-      let path = Path("/")
+      // closed on write for users
+      let path = Path("C:\\Users\\PathKit.txt")
       let data = "Hi".data(using: String.Encoding.utf8, allowLossyConversion: true)
 
       try expect {
         try path.write(data!)
       }.toThrow()
-      #endif
     }
 
     $0.it("can write a String to a file") {
-      let path = Path("/tmp/pathkit-testing")
+      let temp = NSTemporaryDirectory()
+      let path = Path(temp) + "pathkit-testing"
 
       try path.write("Hi")
       try expect(try path.read()) == "Hi"
@@ -399,15 +398,12 @@ describe("PathKit") {
     }
 
     $0.it("throws an error on failure writing a String") {
-      #if os(Linux)
-      throw skip()
-      #else
-      let path = Path("/")
+      // closed on write for users
+      let path = Path("C:\\Users\\PathKit.txt")
 
       try expect {
         try path.write("hi")
       }.toThrow()
-      #endif
     }
   }
 
