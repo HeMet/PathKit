@@ -169,8 +169,8 @@ describe("PathKit") {
   }
 
   $0.it("can be normalized") {
-    let path = Path("/usr/./local/../bin/swift")
-    try expect(path.normalize()) == Path("/usr/bin/swift")
+    let path = Path("C:\\Users\\.\\Default\\..\\Public\\Documents")
+    try expect(path.normalize()) == Path("C:\\Users\\Public\\Documents")
   }
 
   $0.it("can be abbreviated") {
