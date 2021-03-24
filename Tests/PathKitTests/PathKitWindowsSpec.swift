@@ -293,11 +293,14 @@ describe("PathKit") {
   }
 
   $0.describe("changing directory") {
+
+    let users = "C:\\Users"
+
     $0.it("can change directory") {
       let current = Path.current
 
-      try Path("/usr/bin").chdir {
-        try expect(Path.current) == Path("/usr/bin")
+      try Path(users).chdir {
+        try expect(Path.current) == Path(users)
       }
 
       try expect(Path.current) == current
@@ -308,8 +311,8 @@ describe("PathKit") {
       let error = ThrowError()
 
       try expect {
-        try Path("/usr/bin").chdir {
-          try expect(Path.current) == Path("/usr/bin")
+        try Path(users).chdir {
+          try expect(Path.current) == Path(users)
           throw error
         }
       }.toThrow(error)
