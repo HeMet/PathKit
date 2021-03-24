@@ -271,7 +271,7 @@ describe("PathKit") {
     }
 
     $0.it("can test if a path is executable") {
-      try expect((fixtures + "permissions/executable").isExecutable).to.beTrue()
+      try expect(Path("C:\\Windows\\System32\\cmd.exe").isExecutable).to.beTrue()
     }
 
     $0.it("can test if a path is readable") {

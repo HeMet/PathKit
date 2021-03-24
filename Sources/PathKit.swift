@@ -359,7 +359,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isReadable: Bool {
-    return Path.fileManager.isReadableFile(atPath: self.path)
+    return Path.fileManager.isReadableFile(atPath: self.string)
   }
 
   /// Test whether a path is writeable
@@ -369,7 +369,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isWritable: Bool {
-    return Path.fileManager.isWritableFile(atPath: self.path)
+    return Path.fileManager.isWritableFile(atPath: self.string)
   }
 
   /// Test whether a path is executable
@@ -379,7 +379,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isExecutable: Bool {
-    return Path.fileManager.isExecutableFile(atPath: self.path)
+    return Path.fileManager.isExecutableFile(atPath: self.string)
   }
 
   /// Test whether a path is deletable
@@ -389,7 +389,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isDeletable: Bool {
-    return Path.fileManager.isDeletableFile(atPath: self.path)
+    return Path.fileManager.isDeletableFile(atPath: self.string)
   }
 }
 
