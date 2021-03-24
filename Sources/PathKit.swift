@@ -91,7 +91,11 @@ extension Path : ExpressibleByStringLiteral {
 
 extension Path : CustomStringConvertible {
   public var description: String {
+    #if os(Windows)
+    return self.path.windowsPath
+    #else
     return self.path
+    #endif
   }
 }
 
@@ -822,5 +826,13 @@ extension String {
     }
     
     return result
+  }
+
+  internal var windowsPath: String {
+    var result = self
+    if result.hasPrefix(Path.separator) {
+      result.removeFirst()
+    }
+    return result.replacingOccurrences(of: Path.separator, with: "\\")
   }
 }

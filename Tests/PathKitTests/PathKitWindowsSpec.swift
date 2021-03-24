@@ -30,7 +30,8 @@ describe("PathKit") {
   }
 
   $0.it("returns the current working directory") {
-    try expect(Path.current.description) == FileManager().currentDirectoryPath
+    let cwd = FileManager().currentDirectoryPath.replacingOccurrences(of: Path.separator, with: "\\")
+    try expect(Path.current.description) == cwd
   }
 
   $0.describe("initialisation") {
