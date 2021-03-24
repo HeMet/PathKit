@@ -152,7 +152,7 @@ describe("PathKit") {
     }
 
     $0.describe("an absolute path") {
-      let path = Path("/usr/bin/swift")
+      let path = Path(system32)
 
       $0.it("can be converted to an absolute path") {
         try expect(path.absolute()) == path
