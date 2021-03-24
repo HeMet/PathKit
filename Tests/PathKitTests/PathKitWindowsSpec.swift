@@ -84,17 +84,17 @@ describe("PathKit") {
 
   $0.describe("Equatable") {
     $0.it("equates to an equal path") {
-      try expect(Path("/usr")) == Path("/usr")
+      try expect(Path("C:")) == Path("C:")
     }
 
     $0.it("doesn't equate to a non-equal path") {
-      try expect(Path("/usr")) != Path("/bin")
+      try expect(Path("C:")) != Path("D:")
     }
   }
 
   $0.describe("Hashable") {
     $0.it("exposes a hash value identical to an identical path") {
-      try expect(Path("/usr").hashValue) == Path("/usr").hashValue
+      try expect(Path("C:\\Windows").hashValue) == Path("C:\\Windows").hashValue
     }
   }
 
