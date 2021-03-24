@@ -218,25 +218,24 @@ describe("PathKit") {
   }
 
   $0.it("can return the last component") {
-    try expect(Path("a/b/c.d").lastComponent) == "c.d"
-    try expect(Path("a/..").lastComponent) == ".."
+    try expect(Path("a\\b\\c.d").lastComponent) == "c.d"
+    try expect(Path("a\\..").lastComponent) == ".."
   }
 
   $0.it("can return the last component without extension") {
-    try expect(Path("a/b/c.d").lastComponentWithoutExtension) == "c"
-    try expect(Path("a/..").lastComponentWithoutExtension) == ".."
+    try expect(Path("a\\b\\c.d").lastComponentWithoutExtension) == "c"
+    try expect(Path("a\\..").lastComponentWithoutExtension) == ".."
   }
 
   $0.it("can be split into components") {
-    try expect(Path("a/b/c.d").components) == ["a", "b", "c.d"]
-    try expect(Path("/a/b/c.d").components) == ["/", "a", "b", "c.d"]
-    try expect(Path("~/a/b/c.d").components) == ["~", "a", "b", "c.d"]
+    try expect(Path("a\\b\\c.d").components) == ["a", "b", "c.d"]
+    try expect(Path("C:\\a\\b\\c.d").components) == ["C:", "a", "b", "c.d"]
   }
 
   $0.it("can return the extension") {
-    try expect(Path("a/b/c.d").`extension`) == "d"
-    try expect(Path("a/b.c.d").`extension`) == "d"
-    try expect(Path("a/b").`extension`).to.beNil()
+    try expect(Path("a\\b\\c.d").`extension`) == "d"
+    try expect(Path("a\\b.c.d").`extension`) == "d"
+    try expect(Path("a\\b").`extension`).to.beNil()
   }
 
   $0.describe("exists") {
@@ -245,7 +244,7 @@ describe("PathKit") {
     }
 
     $0.it("can check if a path does not exist") {
-      let path = Path("/pathkit/test")
+      let path = Path("C:\\pathkit\\test")
       try expect(path.exists).to.beFalse()
     }
   }

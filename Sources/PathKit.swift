@@ -273,7 +273,13 @@ extension Path {
   /// - Returns: all path components
   ///
   public var components: [String] {
-    return NSString(string: path).pathComponents
+    var result = NSString(string: path).pathComponents
+    #if os(Windows)
+    if result.first == Path.separator {
+      result.removeFirst()
+    }
+    #endif
+    return result
   }
 
   /// The file extension behind the last dot of the last component.
