@@ -801,8 +801,14 @@ internal func +(lhs: String, rhs: String) -> Path {
 
     // Eats up trailing components of the left and leading ".." of the right side
     while lSlice.last != ".." && !lSlice.isEmpty && rSlice.first == ".." {
-      if lSlice.count > 1 || lSlice.first != Path.separator {
-        // A leading "/" is never popped
+      var absolutePathPrefixLength: Int = 1
+      #if os(Windows)
+      // disk designator
+      absolutePathPrefixLength += 1
+      #endif
+
+      if lSlice.count > absolutePathPrefixLength || lSlice.first != Path.separator {
+        // A leading "/" and disk designator (on Windows) are never popped
         lSlice.removeLast()
       }
       if !rSlice.isEmpty {
@@ -818,6 +824,12 @@ internal func +(lhs: String, rhs: String) -> Path {
         continue
       }
     }
+
+    #if os(Windows)
+    if lSlice[0] == Path.separator {
+      lSlice.removeFirst()
+    }
+    #endif
 
     return Path(components: lSlice + rSlice)
   }
