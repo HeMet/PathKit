@@ -812,9 +812,11 @@ extension String {
   internal var unixPath: String {
     if isEmpty { return self }
 
-    var comps = components(separatedBy: "\\").filter{ !$0.isEmpty }
+    // split into parts and remove extraneous separators
+    let comps = components(separatedBy: "\\").filter{ !$0.isEmpty }
     var result = comps.joined(separator: Path.separator)
     let firstComp = comps[0]
+    // Windows abolute path begins with disk designator with pattern `[a-z]:`
     if firstComp.count >= 2 && firstComp[firstComp.index(after: firstComp.startIndex)] == ":" {
       result.insert(contentsOf: Path.separator, at: result.startIndex)
     }
