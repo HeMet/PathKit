@@ -252,7 +252,9 @@ describe("PathKit") {
   $0.describe("file info") {
     $0.it("can test if a path is a directory") {
       try expect((fixtures + "directory").isDirectory).to.beTrue()
+      #if !os(Windows)
       try expect((fixtures + "symlinks/directory").isDirectory).to.beTrue()
+      #endif
     }
 
     $0.it("can test if a path is a symlink") {
