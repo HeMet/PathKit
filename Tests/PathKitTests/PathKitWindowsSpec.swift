@@ -189,11 +189,8 @@ describe("PathKit") {
     }
 
     $0.it("can create a symlink with an absolute destination") {
-      // #if os(Windows)
-      //   // there is no stable absolute destination
-      //   throw skip()
-      // #endif
-      let path = fixtures + "symlinks/swift"
+      let path = fixtures + "symlinks\\swift"
+
       let resolvedPath = try path.symlinkDestination()
       var resolvedPathString = resolvedPath.string
       resolvedPathString.removeFirst()
