@@ -789,12 +789,20 @@ public func +(lhs: Path, rhs: String) -> Path {
 
 /// Appends a String fragment to another String to produce a new Path
 internal func +(lhs: String, rhs: String) -> Path {
-  if rhs.hasPrefix(Path.separator) {
+  #if os(Windows)
+  let unixLhs = lhs.unixPath
+  let unixRhs = rhs.unixPath
+  #else
+  let unixLhs = lhs
+  let unixRhs = rhs
+  #endif
+
+  if unixRhs.hasPrefix(Path.separator) {
     // Absolute paths replace relative paths
     return Path(rhs)
   } else {
-    var lSlice = NSString(string: lhs).pathComponents.fullSlice
-    var rSlice = NSString(string: rhs).pathComponents.fullSlice
+    var lSlice = NSString(string: unixLhs).pathComponents.fullSlice
+    var rSlice = NSString(string: unixRhs).pathComponents.fullSlice
 
     // Get rid of trailing "/" at the left side
     if lSlice.count > 1 && lSlice.last == Path.separator {
@@ -832,7 +840,8 @@ internal func +(lhs: String, rhs: String) -> Path {
     }
 
     #if os(Windows)
-    if lSlice[0] == Path.separator {
+    // Remove leading "\" 
+    if lSlice.first == Path.separator {
       lSlice.removeFirst()
     }
     #endif

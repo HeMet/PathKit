@@ -34,6 +34,7 @@ describe("PathKit") {
     try expect("c:\\Temp".unixPath) == "/c:/Temp"
     try expect("c:\\Temp\\".unixPath) == "/c:/Temp"
     try expect("Temp\\dir".unixPath) == "Temp/dir"
+    try expect("Temp\\".unixPath) == "Temp"
   }
 
   $0.it("provides the system separator") {
@@ -480,33 +481,32 @@ describe("PathKit") {
 
   $0.it("can be appended to") {
     // Trivial cases.
-    try expect(Path("a/b")) == "a" + "b"
-    try expect(Path("a/b")) == "a/" + "b"
+    try expect(Path("a\\b")) == "a" + "b"
+    try expect(Path("a\\b")) == "a\\" + "b"
 
     // Appending (to) absolute paths
-    try expect(Path("/")) == "/" + "/"
-    try expect(Path("/")) == "/" + ".."
-    try expect(Path("/a")) == "/" + "../a"
-    try expect(Path("/b")) == "a" + "/b"
+    try expect(Path("C:")) == "C:" + ".."
+    try expect(Path("C:\\a")) == "C:" + "..\\a"
+    try expect(Path("C:\\b")) == "a" + "C:\\b"
 
     // Appending (to) '.'
     try expect(Path("a")) == "a" + "."
-    try expect(Path("a")) == "a" + "./."
+    try expect(Path("a")) == "a" + ".\\."
     try expect(Path("a")) == "." + "a"
-    try expect(Path("a")) == "./." + "a"
+    try expect(Path("a")) == ".\\." + "a"
     try expect(Path(".")) == "." + "."
     try expect(Path(".")) == "./." + "./."
-    try expect(Path("../a")) == "." + "./../a"
-    try expect(Path("../a")) == "." + "../a"
+    try expect(Path("..\\a")) == "." + ".\\..\\a"
+    try expect(Path("..\\a")) == "." + "..\\a"
 
-    // Appending (to) '..'
+    // // Appending (to) '..'
     try expect(Path(".")) == "a" + ".."
-    try expect(Path("a")) == "a/b" + ".."
-    try expect(Path("../..")) == ".." + ".."
-    try expect(Path("b")) == "a" + "../b"
-    try expect(Path("a/c")) == "a/b" + "../c"
-    try expect(Path("a/b/d/e")) == "a/b/c" + "../d/e"
-    try expect(Path("../../a")) == ".." + "../a"
+    try expect(Path("a")) == "a\\b" + ".."
+    try expect(Path("..\\..")) == ".." + ".."
+    try expect(Path("b")) == "a" + "..\\b"
+    try expect(Path("a\\c")) == "a\\b" + "..\\c"
+    try expect(Path("a\\b\\d\\e")) == "a\\b\\c" + "..\\d\\e"
+    try expect(Path("..\\..\\a")) == ".." + "..\\a"
   }
 
   $0.describe("glob") {
