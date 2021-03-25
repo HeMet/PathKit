@@ -183,31 +183,32 @@ describe("PathKit") {
 
   $0.describe("symlinking") {
     $0.it("can create a symlink with a relative destination") {
-      #if os(Windows)
-        throw skip()
-      #endif
-      let path = fixtures + "symlinks/file"
+      let path = fixtures + "symlinks\\file"
       let resolvedPath = try path.symlinkDestination()
       try expect(resolvedPath.normalize()) == fixtures + "file"
     }
 
     $0.it("can create a symlink with an absolute destination") {
-      #if os(Windows)
-        throw skip()
-      #endif
+      // #if os(Windows)
+      //   // there is no stable absolute destination
+      //   throw skip()
+      // #endif
       let path = fixtures + "symlinks/swift"
       let resolvedPath = try path.symlinkDestination()
-      try expect(resolvedPath) == Path("/usr/bin/swift")
+      var resolvedPathString = resolvedPath.string
+      resolvedPathString.removeFirst()
+
+      let expectedPath = Path("C:\\usr\\bin\\swift")
+      var expectedPathString = expectedPath.string
+      expectedPathString.removeFirst()
+
+      try expect(resolvedPathString) == expectedPathString
     }
 
     $0.it("can create a relative symlink in the same directory") {
-      #if os(Linux) || os(Windows)
-        throw skip()
-      #else
-        let path = fixtures + "symlinks/same-dir"
-        let resolvedPath = try path.symlinkDestination()
-        try expect(resolvedPath.normalize()) == fixtures + "symlinks/file"
-      #endif
+      let path = fixtures + "symlinks\\same-dir"
+      let resolvedPath = try path.symlinkDestination()
+      try expect(resolvedPath.normalize()) == fixtures + "file"
     }
   }
 
@@ -246,22 +247,17 @@ describe("PathKit") {
   $0.describe("file info") {
     $0.it("can test if a path is a directory") {
       try expect((fixtures + "directory").isDirectory).to.beTrue()
-      #if !os(Windows)
-      try expect((fixtures + "symlinks/directory").isDirectory).to.beTrue()
-      #endif
+      try expect((fixtures + "symlinks\\directory").isDirectory).to.beTrue()
     }
 
     $0.it("can test if a path is a symlink") {
-      #if os(Windows)
-        throw skip()
-      #endif
-      try expect((fixtures + "file/file").isSymlink).to.beFalse()
-      try expect((fixtures + "symlinks/file").isSymlink).to.beTrue()
+      try expect((fixtures + "file\\file").isSymlink).to.beFalse()
+      try expect((fixtures + "symlinks\\file").isSymlink).to.beTrue()
     }
 
     $0.it("can test if a path is a file") {
       try expect((fixtures + "file").isFile).to.beTrue()
-      try expect((fixtures + "symlinks/file").isFile).to.beTrue()
+      try expect((fixtures + "symlinks\\file").isFile).to.beTrue()
     }
 
     $0.it("can test if a path is executable") {
