@@ -120,19 +120,8 @@ describe("PathKit") {
       let path = Path("~")
 
       $0.it("can be converted to an absolute path") {        
-        #if os(Windows)
-          let userHomeDir = NSHomeDirectory().replacingOccurrences(of: Path.separator, with: "\\")
-          try expect(path.absolute().string) == userHomeDir
-        #elseif os(Linux)
-          if NSUserName() == "root" {
-            try expect(path.absolute()) == "/root"		
-          }
-          else {
-            try expect(path.absolute()) == "/home/" + NSUserName()
-          }
-        #else
-          try expect(path.absolute()) == "/Users/" + NSUserName()
-        #endif
+        let userHomeDir = NSHomeDirectory().replacingOccurrences(of: Path.separator, with: "\\")
+        try expect(path.absolute().string) == userHomeDir
       }
 
       $0.it("is not absolute") {
@@ -271,11 +260,7 @@ describe("PathKit") {
 
     // fatal error: isDeletableFile(atPath:) is not yet implemented
     $0.it("can test if a path is deletable") {
-      #if os(Linux)
-        throw skip()
-      #else
-        try expect((fixtures + "permissions/deletable").isDeletable).to.beTrue()
-      #endif
+      try expect((fixtures + "permissions/deletable").isDeletable).to.beTrue()
     }
   }
 
@@ -396,9 +381,7 @@ describe("PathKit") {
 
   $0.it("can return the parent directory of a path") {
     try expect((fixtures + "directory\\child").parent()) == fixtures + "directory"
-    #if !os(Windows)
     try expect((fixtures + "symlinks\\directory").parent()) == fixtures + "symlinks"
-    #endif
     try expect((fixtures + "directory\\..").parent()) == fixtures + "directory\\..\\.."
     try expect(Path("C:").parent()) == "C:"
   }
@@ -435,9 +418,8 @@ describe("PathKit") {
     }
   
     $0.it("with options") {
-      #if os(Windows)
       throw skip()
-      #else      
+
       let path = fixtures + "directory"
       var children = ["child", "subdirectory"].map { path + $0 }
       let generator = path.iterateChildren(options: .skipsHiddenFiles).makeIterator()
@@ -452,7 +434,6 @@ describe("PathKit") {
 
       try expect(children.isEmpty).to.beTrue()
       try expect(Path("/non/existing/directory/path").makeIterator().next()).to.beNil()
-      #endif
     }
   }
 
