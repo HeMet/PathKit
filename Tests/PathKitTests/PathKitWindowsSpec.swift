@@ -121,10 +121,9 @@ describe("PathKit") {
 
       $0.it("can be converted to an absolute path") {        
         #if os(Windows)
-          throw skip()
-        #endif
-
-        #if os(Linux)
+          let userHomeDir = NSHomeDirectory().replacingOccurrences(of: Path.separator, with: "\\")
+          try expect(path.absolute().string) == userHomeDir
+        #elseif os(Linux)
           if NSUserName() == "root" {
             try expect(path.absolute()) == "/root"		
           }
@@ -137,16 +136,10 @@ describe("PathKit") {
       }
 
       $0.it("is not absolute") {
-        #if os(Windows)
-          throw skip()
-        #endif
         try expect(path.isAbsolute) == false
       }
 
       $0.it("is relative") {
-        #if os(Windows)
-          throw skip()
-        #endif
         try expect(path.isRelative) == true
       }
 
