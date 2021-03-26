@@ -6,6 +6,7 @@ import Glibc
 let system_glob = Glibc.glob
 #elseif os(Windows)
 import CRT
+import WinSDK
 #else
 import Darwin
 
@@ -893,4 +894,86 @@ extension String {
     return count == 2 && first!.isASCII && first!.isLetter && last == ":"
   }
 }
+
+import ucrt
+import WinSDK
+
+extension Array where Array.Element == WCHAR {
+  internal init(from string: String) {
+    self = string.withCString(encodedAs: UTF16.self) { buffer in
+      Array<WCHAR>(unsafeUninitializedCapacity: string.utf16.count + 1) {
+        wcscpy_s($0.baseAddress, $0.count, buffer)
+        $1 = $0.count
+      }
+    }
+  }
+}
+
+extension String {
+  init(from wide: [WCHAR]) {
+    self = wide.withUnsafeBufferPointer {
+      String(decodingCString: $0.baseAddress!, as: UTF16.self)
+    }
+  }
+}
+
+extension String {
+  internal var wide: [WCHAR] {
+    return Array<WCHAR>(from: self)
+  }
+}
+
+func __glob(pattern: String) -> [String] {
+  let normalizedPattern = Path(pattern).normalize().string
+  var comps = normalizedPattern.components(separatedBy: "\\").filter { !$0.isEmpty }
+  let firstPattern = comps.removeFirst()
+  var result: [String] = []
+  __recursiveGlob(path: firstPattern, remainingPatterns: comps, results: &result)
+  return result
+}
+
+func __recursiveGlob(path: String, remainingPatterns: [String], results: inout [String]) {
+  if remainingPatterns.isEmpty {
+    results.append(path)
+    return
+  }
+
+  var nextRemainingPatterns  = remainingPatterns
+  let pathWithPattern = "\(path)\\\(nextRemainingPatterns.removeFirst())"
+  __findFiles(pattern: pathWithPattern) { matchedName, isDirectory in
+    if matchedName == "." || matchedName == ".." {
+      return
+    }
+
+    let matchedPath = "\(path)\\\(matchedName)"
+    __recursiveGlob(path: matchedPath, remainingPatterns: nextRemainingPatterns, results: &results)
+  }
+}
+
+func __findFiles(pattern: String, body: (String, Bool) -> Void) {
+  var findData = _WIN32_FIND_DATAW()
+  let hFind = FindFirstFileW(pattern.wide, &findData)
+  if hFind == INVALID_HANDLE_VALUE {
+    return
+  }
+
+  let firstFindString = withUnsafePointer(to: &findData.cFileName.0) { ptr -> String in 
+    return String(decodingCString: ptr, as: UTF16.self)
+  }
+  
+  let isDirectory = findData.dwFileAttributes & DWORD(FILE_ATTRIBUTE_DIRECTORY) == DWORD(FILE_ATTRIBUTE_DIRECTORY)
+  body(firstFindString, isDirectory)
+
+  while FindNextFileW(hFind, &findData) {
+    let find = withUnsafePointer(to: &findData.cFileName.0) { ptr -> String in 
+      return String(decodingCString: ptr, as: UTF16.self)
+    }
+    let isDirectory = findData.dwFileAttributes & DWORD(FILE_ATTRIBUTE_DIRECTORY) == DWORD(FILE_ATTRIBUTE_DIRECTORY)
+    body(find, isDirectory)
+  }
+
+  FindClose(hFind)
+}
+
 #endif
+
