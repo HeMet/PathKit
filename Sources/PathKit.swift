@@ -870,7 +870,7 @@ extension String {
     if isEmpty { return self }
 
     // split into parts and remove extraneous separators
-    var pathWithUnixSeparators = replacingOccurrences(of: "\\", with: Path.separator)
+    let pathWithUnixSeparators = replacingOccurrences(of: "\\", with: Path.separator)
     let components = pathWithUnixSeparators.components(separatedBy: Path.separator).filter{ !$0.isEmpty }
     var result = components.joined(separator: Path.separator)
     let firstComp = components[0]
@@ -938,13 +938,13 @@ func recursiveGlob(path: String, remainingPatterns: [String], results: inout [St
   }
 
   var nextRemainingPatterns  = remainingPatterns
-  let pathWithPattern = "\(path)/\(nextRemainingPatterns.removeFirst())"
+  let pathWithPattern: String = path + Path.separator + nextRemainingPatterns.removeFirst()
   findFiles(pattern: pathWithPattern) { matchedName, isDirectory in
     if matchedName == "." || matchedName == ".." {
       return
     }
 
-    let matchedPath = "\(path)/\(matchedName)"
+    let matchedPath: String = path + Path.separator + matchedName
     recursiveGlob(path: matchedPath, remainingPatterns: nextRemainingPatterns, results: &results)
   }
 }
