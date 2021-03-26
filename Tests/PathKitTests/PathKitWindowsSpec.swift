@@ -9,6 +9,17 @@ func == (lhs:ThrowError, rhs:ThrowError) -> Bool { return true }
 
 
 public func testPathKit() {
+
+// print("CWD: \(Path.current)")
+// let finds = glob(pattern: "Tests\\..\\.\\Te*")
+// // let finds = glob(pattern: "g:\\Projects\\SourceryDeps\\PathKit\\*")
+// // let finds = glob(pattern: "g:\\Projects\\SourceryDeps\\PathKit\\Tests\\PathKitTests\\Fixtures\\*\\*able")
+// // let finds = glob(pattern: "g:\\Projects\\SourceryDeps\\*\\Tests\\PathKitTests\\Fixtures\\*\\directory")
+// // let finds = glob(pattern: "*")
+// print(finds)
+
+// return;
+
 describe("PathKit") {
   let filePath = #file
   let fixtures = Path(filePath).parent() + "Fixtures"
@@ -258,7 +269,6 @@ describe("PathKit") {
       try expect((fixtures + "permissions/writable").isWritable).to.beTrue()
     }
 
-    // fatal error: isDeletableFile(atPath:) is not yet implemented
     $0.it("can test if a path is deletable") {
       try expect((fixtures + "permissions/deletable").isDeletable).to.beTrue()
     }
@@ -466,7 +476,7 @@ describe("PathKit") {
     try expect(Path("..\\a")) == "." + ".\\..\\a"
     try expect(Path("..\\a")) == "." + "..\\a"
 
-    // // Appending (to) '..'
+    // Appending (to) '..'
     try expect(Path(".")) == "a" + ".."
     try expect(Path("a")) == "a\\b" + ".."
     try expect(Path("..\\..")) == ".." + ".."

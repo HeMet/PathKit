@@ -630,8 +630,7 @@ extension Path {
 extension Path {
   public static func glob(_ pattern: String) -> [Path] {
 #if os(Windows)
-    // Windows has no glob support
-    return []
+    return PathKit.glob(pattern: pattern).map { Path($0) }
 #else
     var gt = glob_t()
     let cPattern = strdup(pattern)
