@@ -428,8 +428,6 @@ describe("PathKit") {
     }
   
     $0.it("with options") {
-      throw skip()
-
       let path = fixtures + "directory"
       var children = ["child", "subdirectory"].map { path + $0 }
       let generator = path.iterateChildren(options: .skipsHiddenFiles).makeIterator()
