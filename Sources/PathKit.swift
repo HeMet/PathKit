@@ -864,7 +864,10 @@ extension Array {
   }
 }
 
+// MARK: Windows support routines
+
 #if os(Windows)
+// MARK: Path conversion
 extension String {
   internal var unixPath: String {
     if isEmpty { return self }
@@ -895,11 +898,9 @@ extension String {
   }
 }
 
-import ucrt
-import WinSDK
-
-extension Array where Array.Element == WCHAR {
-  internal init(from string: String) {
+// MARK: String WCHAR support
+private extension Array where Array.Element == WCHAR {
+  init(from string: String) {
     self = string.withCString(encodedAs: UTF16.self) { buffer in
       Array<WCHAR>(unsafeUninitializedCapacity: string.utf16.count + 1) {
         wcscpy_s($0.baseAddress, $0.count, buffer)
@@ -909,7 +910,11 @@ extension Array where Array.Element == WCHAR {
   }
 }
 
-extension String {
+private extension String {
+  var wide: [WCHAR] {
+    return Array<WCHAR>(from: self)
+  }
+
   init(from wide: [WCHAR]) {
     self = wide.withUnsafeBufferPointer {
       String(decodingCString: $0.baseAddress!, as: UTF16.self)
@@ -917,11 +922,7 @@ extension String {
   }
 }
 
-extension String {
-  internal var wide: [WCHAR] {
-    return Array<WCHAR>(from: self)
-  }
-}
+// MARK: Globbing
 
 func glob(pattern: String) -> [String] {
   var components = Path(pattern).absolute().components
@@ -931,7 +932,7 @@ func glob(pattern: String) -> [String] {
   return result
 }
 
-func recursiveGlob(path: String, remainingPatterns: [String], results: inout [String]) {
+private func recursiveGlob(path: String, remainingPatterns: [String], results: inout [String]) {
   if remainingPatterns.isEmpty {
     results.append(path)
     return
@@ -949,7 +950,7 @@ func recursiveGlob(path: String, remainingPatterns: [String], results: inout [St
   }
 }
 
-func findFiles(pattern: String, body: (String, Bool) -> Void) {
+private func findFiles(pattern: String, body: (String, Bool) -> Void) {
   var findData = _WIN32_FIND_DATAW()
   let hFind = FindFirstFileW(pattern.wide, &findData)
   if hFind == INVALID_HANDLE_VALUE {
