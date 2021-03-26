@@ -914,12 +914,6 @@ private extension String {
   var wide: [WCHAR] {
     return Array<WCHAR>(from: self)
   }
-
-  init(from wide: [WCHAR]) {
-    self = wide.withUnsafeBufferPointer {
-      String(decodingCString: $0.baseAddress!, as: UTF16.self)
-    }
-  }
 }
 
 // MARK: Globbing
