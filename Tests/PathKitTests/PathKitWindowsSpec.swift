@@ -9,17 +9,6 @@ func == (lhs:ThrowError, rhs:ThrowError) -> Bool { return true }
 
 
 public func testPathKit() {
-
-// print("CWD: \(Path.current)")
-// let finds = glob(pattern: "Tests\\..\\.\\Te*")
-// // let finds = glob(pattern: "g:\\Projects\\SourceryDeps\\PathKit\\*")
-// // let finds = glob(pattern: "g:\\Projects\\SourceryDeps\\PathKit\\Tests\\PathKitTests\\Fixtures\\*\\*able")
-// // let finds = glob(pattern: "g:\\Projects\\SourceryDeps\\*\\Tests\\PathKitTests\\Fixtures\\*\\directory")
-// // let finds = glob(pattern: "*")
-// print(finds)
-
-// return;
-
 describe("PathKit") {
   let filePath = #file
   let fixtures = Path(filePath).parent() + "Fixtures"
