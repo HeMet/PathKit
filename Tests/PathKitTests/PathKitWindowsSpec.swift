@@ -33,6 +33,7 @@ describe("PathKit") {
     try expect("c:\\".unixPath) == "/c:"
     try expect("c:\\Temp".unixPath) == "/c:/Temp"
     try expect("c:\\Temp\\".unixPath) == "/c:/Temp"
+    try expect("c:/Temp/".unixPath) == "/c:/Temp"
     try expect("Temp\\dir".unixPath) == "Temp/dir"
     try expect("Temp\\".unixPath) == "Temp"
   }
@@ -42,11 +43,11 @@ describe("PathKit") {
   }
 
   $0.it("returns the current working directory") {
-    let cwd = FileManager().currentDirectoryPath.replacingOccurrences(of: Path.separator, with: "\\")
+    let cwd = FileManager().currentDirectoryPath
     try expect(Path.current.description) == cwd
   }
 
-  let system32 = "C:\\Windows\\System32"
+  let system32 = "C:/Windows/System32"
 
   $0.describe("initialisation") {
     $0.it("can be initialised with no arguments") {
@@ -62,11 +63,15 @@ describe("PathKit") {
       let path = Path(components: ["C:", "Windows", "System32"])
       try expect(path.description) == system32
     }
+
+    $0.it("recognizes both unix & platform path separators") {
+      try expect(Path(system32)) == Path("C:\\Windows\\System32")
+    }
   }
 
   $0.describe("convertable") {
     $0.it("can be converted from a string literal") {
-      let path: Path = "C:\\Windows\\System32"
+      let path: Path = "C:/Windows/System32"
       try expect(path.description) == system32
     }
 
@@ -95,7 +100,7 @@ describe("PathKit") {
 
   $0.describe("Hashable") {
     $0.it("exposes a hash value identical to an identical path") {
-      try expect(Path("C:\\Windows").hashValue) == Path("C:\\Windows").hashValue
+      try expect(Path("C:/Windows").hashValue) == Path("C:/Windows").hashValue
     }
   }
 
@@ -120,7 +125,7 @@ describe("PathKit") {
       let path = Path("~")
 
       $0.it("can be converted to an absolute path") {        
-        let userHomeDir = NSHomeDirectory().replacingOccurrences(of: Path.separator, with: "\\")
+        let userHomeDir = NSHomeDirectory().replacingOccurrences(of: Path.separator, with: "/")
         try expect(path.absolute().string) == userHomeDir
       }
 
@@ -152,13 +157,13 @@ describe("PathKit") {
   }
 
   $0.it("can be normalized") {
-    let path = Path("C:\\Users\\.\\Default\\..\\Public\\Documents")
-    try expect(path.normalize()) == Path("C:\\Users\\Public\\Documents")
+    let path = Path("C:/Users/./Default/../Public/Documents")
+    try expect(path.normalize()) == Path("C:/Users/Public/Documents")
   }
 
   $0.it("can't abbreviate on Windows") {
     let home = Path.home.string
-    let homePath = Path("\(home)\\foo\\bar")
+    let homePath = Path("\(home)/foo/bar")
     try expect(homePath.abbreviate()) == homePath
   }
   
@@ -172,19 +177,19 @@ describe("PathKit") {
 
   $0.describe("symlinking") {
     $0.it("can create a symlink with a relative destination") {
-      let path = fixtures + "symlinks\\file"
+      let path = fixtures + "symlinks/file"
       let resolvedPath = try path.symlinkDestination()
       try expect(resolvedPath.normalize()) == fixtures + "file"
     }
 
     $0.it("can create a symlink with an absolute destination") {
-      let path = fixtures + "symlinks\\swift"
+      let path = fixtures + "symlinks/swift"
 
       let resolvedPath = try path.symlinkDestination()
       var resolvedPathString = resolvedPath.string
       resolvedPathString.removeFirst()
 
-      let expectedPath = Path("C:\\usr\\bin\\swift")
+      let expectedPath = Path("C:/usr/bin/swift")
       var expectedPathString = expectedPath.string
       expectedPathString.removeFirst()
 
@@ -192,31 +197,31 @@ describe("PathKit") {
     }
 
     $0.it("can create a relative symlink in the same directory") {
-      let path = fixtures + "symlinks\\same-dir"
+      let path = fixtures + "symlinks/same-dir"
       let resolvedPath = try path.symlinkDestination()
       try expect(resolvedPath.normalize()) == fixtures + "file"
     }
   }
 
   $0.it("can return the last component") {
-    try expect(Path("a\\b\\c.d").lastComponent) == "c.d"
-    try expect(Path("a\\..").lastComponent) == ".."
+    try expect(Path("a/b/c.d").lastComponent) == "c.d"
+    try expect(Path("a/..").lastComponent) == ".."
   }
 
   $0.it("can return the last component without extension") {
-    try expect(Path("a\\b\\c.d").lastComponentWithoutExtension) == "c"
-    try expect(Path("a\\..").lastComponentWithoutExtension) == ".."
+    try expect(Path("a/b/c.d").lastComponentWithoutExtension) == "c"
+    try expect(Path("a/..").lastComponentWithoutExtension) == ".."
   }
 
   $0.it("can be split into components") {
-    try expect(Path("a\\b\\c.d").components) == ["a", "b", "c.d"]
-    try expect(Path("C:\\a\\b\\c.d").components) == ["C:", "a", "b", "c.d"]
+    try expect(Path("a/b/c.d").components) == ["a", "b", "c.d"]
+    try expect(Path("C:/a/b/c.d").components) == ["C:", "a", "b", "c.d"]
   }
 
   $0.it("can return the extension") {
-    try expect(Path("a\\b\\c.d").`extension`) == "d"
-    try expect(Path("a\\b.c.d").`extension`) == "d"
-    try expect(Path("a\\b").`extension`).to.beNil()
+    try expect(Path("a/b/c.d").`extension`) == "d"
+    try expect(Path("a/b.c.d").`extension`) == "d"
+    try expect(Path("a/b").`extension`).to.beNil()
   }
 
   $0.describe("exists") {
@@ -225,7 +230,7 @@ describe("PathKit") {
     }
 
     $0.it("can check if a path does not exist") {
-      let path = Path("C:\\pathkit\\test")
+      let path = Path("C:/pathkit/test")
       try expect(path.exists).to.beFalse()
     }
   }
@@ -233,21 +238,21 @@ describe("PathKit") {
   $0.describe("file info") {
     $0.it("can test if a path is a directory") {
       try expect((fixtures + "directory").isDirectory).to.beTrue()
-      try expect((fixtures + "symlinks\\directory").isDirectory).to.beTrue()
+      try expect((fixtures + "symlinks/directory").isDirectory).to.beTrue()
     }
 
     $0.it("can test if a path is a symlink") {
-      try expect((fixtures + "file\\file").isSymlink).to.beFalse()
-      try expect((fixtures + "symlinks\\file").isSymlink).to.beTrue()
+      try expect((fixtures + "file/file").isSymlink).to.beFalse()
+      try expect((fixtures + "symlinks/file").isSymlink).to.beTrue()
     }
 
     $0.it("can test if a path is a file") {
       try expect((fixtures + "file").isFile).to.beTrue()
-      try expect((fixtures + "symlinks\\file").isFile).to.beTrue()
+      try expect((fixtures + "symlinks/file").isFile).to.beTrue()
     }
 
     $0.it("can test if a path is executable") {
-      try expect(Path("C:\\Windows\\System32\\cmd.exe").isExecutable).to.beTrue()
+      try expect(Path("C:/Windows/System32/cmd.exe").isExecutable).to.beTrue()
     }
 
     $0.it("can test if a path is readable") {
@@ -265,7 +270,7 @@ describe("PathKit") {
 
   $0.describe("changing directory") {
 
-    let users = "C:\\Users"
+    let users = "C:/Users"
 
     $0.it("can change directory") {
       let current = Path.current
@@ -313,7 +318,7 @@ describe("PathKit") {
     }
 
     $0.it("errors when you read from a non-existing file as NSData") {
-      let path = Path("C:\\tmp\\pathkit-testing")
+      let path = Path("C:/tmp/pathkit-testing")
 
       try expect {
         try path.read() as Data
@@ -328,7 +333,7 @@ describe("PathKit") {
     }
 
     $0.it("errors when you read from a non-existing file as a String") {
-      let path = Path("C:\\tmp\\pathkit-testing")
+      let path = Path("C:/tmp/pathkit-testing")
 
       try expect {
         try path.read() as String
@@ -351,7 +356,7 @@ describe("PathKit") {
 
     $0.it("throws an error on failure writing data") {
       // closed on write for users
-      let path = Path("C:\\Users\\PathKit.txt")
+      let path = Path("C:/Users/PathKit.txt")
       let data = "Hi".data(using: String.Encoding.utf8, allowLossyConversion: true)
 
       try expect {
@@ -370,7 +375,7 @@ describe("PathKit") {
 
     $0.it("throws an error on failure writing a String") {
       // closed on write for users
-      let path = Path("C:\\Users\\PathKit.txt")
+      let path = Path("C:/Users/PathKit.txt")
 
       try expect {
         try path.write("hi")
@@ -379,9 +384,9 @@ describe("PathKit") {
   }
 
   $0.it("can return the parent directory of a path") {
-    try expect((fixtures + "directory\\child").parent()) == fixtures + "directory"
-    try expect((fixtures + "symlinks\\directory").parent()) == fixtures + "symlinks"
-    try expect((fixtures + "directory\\..").parent()) == fixtures + "directory\\..\\.."
+    try expect((fixtures + "directory/child").parent()) == fixtures + "directory"
+    try expect((fixtures + "symlinks/directory").parent()) == fixtures + "symlinks"
+    try expect((fixtures + "directory/..").parent()) == fixtures + "directory/../.."
     try expect(Path("C:").parent()) == "C:"
   }
 
@@ -413,7 +418,7 @@ describe("PathKit") {
       }
 
       try expect(children.isEmpty).to.beTrue()
-      try expect(Path("C:\\non\\existing\\directory\\path").makeIterator().next()).to.beNil()
+      try expect(Path("C:/non/existing/directory/path").makeIterator().next()).to.beNil()
     }
   
     $0.it("with options") {
@@ -435,8 +440,8 @@ describe("PathKit") {
   }
 
   $0.it("can be pattern matched") {
-    try expect(Path("C:\\Windows") ~= "C:").to.beFalse()
-    try expect(Path("C:\\Users") ~= "C:\\Users").to.beTrue()
+    try expect(Path("C:/Windows") ~= "C:").to.beFalse()
+    try expect(Path("C:/Users") ~= "C:/Users").to.beTrue()
   }
 
   $0.it("can be compared") {
@@ -445,32 +450,32 @@ describe("PathKit") {
 
   $0.it("can be appended to") {
     // Trivial cases.
-    try expect(Path("a\\b")) == "a" + "b"
-    try expect(Path("a\\b")) == "a\\" + "b"
+    try expect(Path("a/b")) == "a" + "b"
+    try expect(Path("a/b")) == "a/" + "b"
 
     // Appending (to) absolute paths
     try expect(Path("C:")) == "C:" + ".."
-    try expect(Path("C:\\a")) == "C:" + "..\\a"
-    try expect(Path("C:\\b")) == "a" + "C:\\b"
+    try expect(Path("C:/a")) == "C:" + "../a"
+    try expect(Path("C:/b")) == "a" + "C:/b"
 
     // Appending (to) '.'
     try expect(Path("a")) == "a" + "."
-    try expect(Path("a")) == "a" + ".\\."
+    try expect(Path("a")) == "a" + "./."
     try expect(Path("a")) == "." + "a"
-    try expect(Path("a")) == ".\\." + "a"
+    try expect(Path("a")) == "./." + "a"
     try expect(Path(".")) == "." + "."
     try expect(Path(".")) == "./." + "./."
-    try expect(Path("..\\a")) == "." + ".\\..\\a"
-    try expect(Path("..\\a")) == "." + "..\\a"
+    try expect(Path("../a")) == "." + "./../a"
+    try expect(Path("../a")) == "." + "../a"
 
     // Appending (to) '..'
     try expect(Path(".")) == "a" + ".."
-    try expect(Path("a")) == "a\\b" + ".."
-    try expect(Path("..\\..")) == ".." + ".."
-    try expect(Path("b")) == "a" + "..\\b"
-    try expect(Path("a\\c")) == "a\\b" + "..\\c"
-    try expect(Path("a\\b\\d\\e")) == "a\\b\\c" + "..\\d\\e"
-    try expect(Path("..\\..\\a")) == ".." + "..\\a"
+    try expect(Path("a")) == "a/b" + ".."
+    try expect(Path("../..")) == ".." + ".."
+    try expect(Path("b")) == "a" + "../b"
+    try expect(Path("a/c")) == "a/b" + "../c"
+    try expect(Path("a/b/d/e")) == "a/b/c" + "../d/e"
+    try expect(Path("../../a")) == ".." + "../a"
   }
 
   $0.describe("glob") {

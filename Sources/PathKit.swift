@@ -870,9 +870,10 @@ extension String {
     if isEmpty { return self }
 
     // split into parts and remove extraneous separators
-    let patterns = components(separatedBy: "\\").filter{ !$0.isEmpty }
-    var result = patterns.joined(separator: Path.separator)
-    let firstComp = patterns[0]
+    var pathWithUnixSeparators = replacingOccurrences(of: "\\", with: Path.separator)
+    let components = pathWithUnixSeparators.components(separatedBy: Path.separator).filter{ !$0.isEmpty }
+    var result = components.joined(separator: Path.separator)
+    let firstComp = components[0]
     // Windows abolute path begins with disk designator with pattern `[a-z]:`
     if firstComp.count >= 2 && firstComp[firstComp.index(after: firstComp.startIndex)] == ":" {
       result.insert(contentsOf: Path.separator, at: result.startIndex)
@@ -886,7 +887,7 @@ extension String {
     if result.hasPrefix(Path.separator) {
       result.removeFirst()
     }
-    return result.replacingOccurrences(of: Path.separator, with: "\\")
+    return result
   }
 
   internal var isDiskDesignator: Bool {
@@ -923,10 +924,10 @@ extension String {
 }
 
 func glob(pattern: String) -> [String] {
-  var patterns = Path(pattern).absolute().components
-  let firstPattern = patterns.removeFirst()
+  var components = Path(pattern).absolute().components
+  let firstPattern = components.removeFirst()
   var result: [String] = []
-  recursiveGlob(path: firstPattern, remainingPatterns: patterns, results: &result)
+  recursiveGlob(path: firstPattern, remainingPatterns: components, results: &result)
   return result
 }
 
@@ -937,13 +938,13 @@ func recursiveGlob(path: String, remainingPatterns: [String], results: inout [St
   }
 
   var nextRemainingPatterns  = remainingPatterns
-  let pathWithPattern = "\(path)\\\(nextRemainingPatterns.removeFirst())"
+  let pathWithPattern = "\(path)/\(nextRemainingPatterns.removeFirst())"
   findFiles(pattern: pathWithPattern) { matchedName, isDirectory in
     if matchedName == "." || matchedName == ".." {
       return
     }
 
-    let matchedPath = "\(path)\\\(matchedName)"
+    let matchedPath = "\(path)/\(matchedName)"
     recursiveGlob(path: matchedPath, remainingPatterns: nextRemainingPatterns, results: &results)
   }
 }
