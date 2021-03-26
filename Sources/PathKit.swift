@@ -871,9 +871,9 @@ extension String {
     if isEmpty { return self }
 
     // split into parts and remove extraneous separators
-    let comps = components(separatedBy: "\\").filter{ !$0.isEmpty }
-    var result = comps.joined(separator: Path.separator)
-    let firstComp = comps[0]
+    let patterns = components(separatedBy: "\\").filter{ !$0.isEmpty }
+    var result = patterns.joined(separator: Path.separator)
+    let firstComp = patterns[0]
     // Windows abolute path begins with disk designator with pattern `[a-z]:`
     if firstComp.count >= 2 && firstComp[firstComp.index(after: firstComp.startIndex)] == ":" {
       result.insert(contentsOf: Path.separator, at: result.startIndex)
@@ -923,16 +923,15 @@ extension String {
   }
 }
 
-func __glob(pattern: String) -> [String] {
-  let normalizedPattern = Path(pattern).normalize().string
-  var comps = normalizedPattern.components(separatedBy: "\\").filter { !$0.isEmpty }
-  let firstPattern = comps.removeFirst()
+func glob(pattern: String) -> [String] {
+  var patterns = Path(pattern).absolute().components
+  let firstPattern = patterns.removeFirst()
   var result: [String] = []
-  __recursiveGlob(path: firstPattern, remainingPatterns: comps, results: &result)
+  recursiveGlob(path: firstPattern, remainingPatterns: patterns, results: &result)
   return result
 }
 
-func __recursiveGlob(path: String, remainingPatterns: [String], results: inout [String]) {
+func recursiveGlob(path: String, remainingPatterns: [String], results: inout [String]) {
   if remainingPatterns.isEmpty {
     results.append(path)
     return
@@ -940,17 +939,17 @@ func __recursiveGlob(path: String, remainingPatterns: [String], results: inout [
 
   var nextRemainingPatterns  = remainingPatterns
   let pathWithPattern = "\(path)\\\(nextRemainingPatterns.removeFirst())"
-  __findFiles(pattern: pathWithPattern) { matchedName, isDirectory in
+  findFiles(pattern: pathWithPattern) { matchedName, isDirectory in
     if matchedName == "." || matchedName == ".." {
       return
     }
 
     let matchedPath = "\(path)\\\(matchedName)"
-    __recursiveGlob(path: matchedPath, remainingPatterns: nextRemainingPatterns, results: &results)
+    recursiveGlob(path: matchedPath, remainingPatterns: nextRemainingPatterns, results: &results)
   }
 }
 
-func __findFiles(pattern: String, body: (String, Bool) -> Void) {
+func findFiles(pattern: String, body: (String, Bool) -> Void) {
   var findData = _WIN32_FIND_DATAW()
   let hFind = FindFirstFileW(pattern.wide, &findData)
   if hFind == INVALID_HANDLE_VALUE {
