@@ -34,6 +34,7 @@ describe("PathKit") {
     let matchingPathPair = ("C:/Users", "C:/Users")
     let nonMatchingPathPair = ("C:/Users", "C:")
     let userHomeDir = NSHomeDirectory()
+    let currentRoot = fixtures.components[0]
   #else
     let somePlatformPath = "/usr/bin/swift"
     let somePlatformPathComponents = ["/usr", "bin", "swift"]
@@ -56,6 +57,7 @@ describe("PathKit") {
     let matchingPathPair = ("/var", "~")
     let nonMatchingPathPair = ("/Users", "/Users")
     let userHomeDir = "/Users/" + NSUserName()
+    let currentRoot = "/"
   #endif
 
   $0.before {
@@ -265,23 +267,9 @@ describe("PathKit") {
     }
 
     $0.it("can create a symlink with an absolute destination") {
-      #if os(Windows)
-        let path = fixtures + "symlinks/swift"
-
-        let resolvedPath = try path.symlinkDestination()
-        var resolvedPathString = resolvedPath.string
-        resolvedPathString.removeFirst()
-
-        let expectedPath = Path("C:/usr/bin/swift")
-        var expectedPathString = expectedPath.string
-        expectedPathString.removeFirst()
-
-        try expect(resolvedPathString) == expectedPathString
-      #else
-        let path = fixtures + "symlinks/swift"
-        let resolvedPath = try path.symlinkDestination()
-        try expect(resolvedPath) == Path("/usr/bin/swift")
-      #endif
+      let path = fixtures + "symlinks/swift"
+      let resolvedPath = try path.symlinkDestination()
+      try expect(resolvedPath) == Path(currentRoot) + "usr/bin/swift"
     }
 
     $0.it("can create a relative symlink in the same directory") {
