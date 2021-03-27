@@ -203,8 +203,15 @@ extension Path {
     let rangeOptions: String.CompareOptions = fileSystemInfo.isFSCaseSensitiveAt(path: self) ?
       [.anchored] : [.anchored, .caseInsensitive]
     let home = Path.home.string
-    guard let homeRange = self.path.range(of: home, options: rangeOptions) else { return self }
-    let withoutHome = Path(self.path.replacingCharacters(in: homeRange, with: ""))
+    
+    #if os(Windows)
+    let path = self.path.windowsPath
+    #else
+    let path = self.path
+    #endif
+
+    guard let homeRange = path.range(of: home, options: rangeOptions) else { return self }
+    let withoutHome = Path(path.replacingCharacters(in: homeRange, with: ""))
     
     if withoutHome.path.isEmpty || withoutHome.path == Path.separator {
         return Path("~")

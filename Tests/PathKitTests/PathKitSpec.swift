@@ -222,29 +222,21 @@ describe("PathKit") {
     try expect(path.normalize()) == Path(someNormalizedPath)
   }
 
-  #if os(Windows)
-    $0.it("can't abbreviate on Windows") {
-      let home = Path.home.string
-      let homePath = Path("\(home)/foo/bar")
-      try expect(homePath.abbreviate()) == homePath
-    }
-  #else
-    $0.it("can be abbreviated") {
-      let home = Path.home.string
-      
-      try expect(Path("\(home)/foo/bar").abbreviate()) == Path("~/foo/bar")
-      try expect(Path("\(home)").abbreviate()) == Path("~")
-      try expect(Path("\(home)/").abbreviate()) == Path("~")
-      try expect(Path("\(home)/backups\(home)").abbreviate()) == Path("~/backups\(home)")
-      try expect(Path("\(home)/backups\(home)/foo/bar").abbreviate()) == Path("~/backups\(home)/foo/bar")
-      
-      #if os(Linux)
-          try expect(Path("\(home.uppercased())").abbreviate()) == Path("\(home.uppercased())")
-      #else
-          try expect(Path("\(home.uppercased())").abbreviate()) == Path("~")
-      #endif
-    }
-  #endif
+  $0.it("can be abbreviated") {
+    let home = Path.home.string
+    
+    try expect(Path("\(home)/foo/bar").abbreviate()) == Path("~/foo/bar")
+    try expect(Path("\(home)").abbreviate()) == Path("~")
+    try expect(Path("\(home)/").abbreviate()) == Path("~")
+    try expect(Path("\(home)/backups\(home)").abbreviate()) == Path("~/backups\(home)")
+    try expect(Path("\(home)/backups\(home)/foo/bar").abbreviate()) == Path("~/backups\(home)/foo/bar")
+    
+    #if os(Linux)
+        try expect(Path("\(home.uppercased())").abbreviate()) == Path("\(home.uppercased())")
+    #else
+        try expect(Path("\(home.uppercased())").abbreviate()) == Path("~")
+    #endif
+  }
   
   struct FakeFSInfo: FileSystemInfo {
     let caseSensitive: Bool
@@ -254,23 +246,21 @@ describe("PathKit") {
     }
   }
 
-  #if !os(Windows)
-    $0.it("can abbreviate paths on a case sensitive fs") {
-      let home = Path.home.string
-      let fakeFSInfo = FakeFSInfo(caseSensitive: true)
-      let path = Path("\(home.uppercased())", fileSystemInfo: fakeFSInfo)
-      
-      try expect(path.abbreviate().string) == home.uppercased()
-    }
+  $0.it("can abbreviate paths on a case sensitive fs") {
+    let home = Path.home.string
+    let fakeFSInfo = FakeFSInfo(caseSensitive: true)
+    let path = Path("\(home.uppercased())", fileSystemInfo: fakeFSInfo)
     
-    $0.it("can abbreviate paths on a case insensitive fs") {
-      let home = Path.home.string
-      let fakeFSInfo = FakeFSInfo(caseSensitive: false)
-      let path = Path("\(home.uppercased())", fileSystemInfo: fakeFSInfo)
-      
-      try expect(path.abbreviate()) == Path("~")
-    }
-  #endif
+    try expect(path.abbreviate().string) == home.uppercased()
+  }
+  
+  $0.it("can abbreviate paths on a case insensitive fs") {
+    let home = Path.home.string
+    let fakeFSInfo = FakeFSInfo(caseSensitive: false)
+    let path = Path("\(home.uppercased())", fileSystemInfo: fakeFSInfo)
+    
+    try expect(path.abbreviate()) == Path("~")
+  }
 
   $0.describe("symlinking") {
     $0.it("can create a symlink with a relative destination") {
