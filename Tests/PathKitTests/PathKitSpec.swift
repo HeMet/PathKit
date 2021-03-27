@@ -29,12 +29,11 @@ describe("PathKit") {
     let nonExistingTempFile = "C:/tmp/pathkit-testing"
     let tempDirectory = NSTemporaryDirectory()
     let pathClosedOnWrite = "C:/Users/PathKit.txt"
-    let root = "C:/"
+    let root: String = fixtures.components[0] + Path.separator
     let longNonExistentPath = "C:/non/existing/directory/path"
     let matchingPathPair = ("C:/Users", "C:/Users")
     let nonMatchingPathPair = ("C:/Users", "C:")
     let userHomeDir = NSHomeDirectory()
-    let currentRoot = fixtures.components[0]
   #else
     let somePlatformPath = "/usr/bin/swift"
     let somePlatformPathComponents = ["/usr", "bin", "swift"]
@@ -57,7 +56,6 @@ describe("PathKit") {
     let matchingPathPair = ("/var", "~")
     let nonMatchingPathPair = ("/Users", "/Users")
     let userHomeDir = "/Users/" + NSUserName()
-    let currentRoot = "/"
   #endif
 
   $0.before {
@@ -269,7 +267,7 @@ describe("PathKit") {
     $0.it("can create a symlink with an absolute destination") {
       let path = fixtures + "symlinks/swift"
       let resolvedPath = try path.symlinkDestination()
-      try expect(resolvedPath) == Path(currentRoot) + "usr/bin/swift"
+      try expect(resolvedPath) == Path(root) + "usr/bin/swift"
     }
 
     $0.it("can create a relative symlink in the same directory") {
