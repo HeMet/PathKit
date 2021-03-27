@@ -70,7 +70,6 @@ describe("PathKit") {
     try expect(Path.current.description) == FileManager().currentDirectoryPath
   }
 
-  #if os(Windows)
   $0.describe("Windows paths") {
     $0.it("can determine disk designator") {
       try expect("c:".isDiskDesignator) == true
@@ -93,7 +92,6 @@ describe("PathKit") {
       try expect("Temp\\".unixPath) == "Temp"
     }
   }
-  #endif
 
   $0.describe("initialisation") {
     $0.it("can be initialised with no arguments") {
@@ -110,11 +108,9 @@ describe("PathKit") {
       try expect(path.description) == somePlatformPath
     }
 
-    #if os(Windows)
     $0.it("recognizes both unix & platform path separators") {
       try expect(Path(somePlatformPath)) == Path("C:\\Windows\\System32")
     }
-    #endif
   }
 
   $0.describe("convertable") {

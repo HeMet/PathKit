@@ -873,7 +873,6 @@ extension Array {
 
 // MARK: Windows support routines
 
-#if os(Windows)
 // MARK: Path conversion
 extension String {
   internal var unixPath: String {
@@ -905,6 +904,7 @@ extension String {
   }
 }
 
+#if os(Windows)
 // MARK: String WCHAR support
 private extension Array where Array.Element == WCHAR {
   init(from string: String) {
