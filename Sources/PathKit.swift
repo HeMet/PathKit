@@ -54,28 +54,26 @@ public struct Path {
     
   /// Create a Path by joining multiple path components together
   public init<S : Collection>(components: S) where S.Iterator.Element == String {
+    func isDiskDesignator(_ s: String?) -> Bool {
+      #if os(Windows)
+        return s?.isDiskDesignator == true
+      #else
+        return false
+      #endif
+    }
+
     let path: String
-    #if os(Windows)
-      if components.isEmpty {
-        path = "."
-      } else {
-        let relativePath = components.joined(separator: Path.separator)
-        if components.first?.isDiskDesignator == true {
-          path = Path.separator + relativePath
-        } else {
-          path = relativePath
-        }
-      }
-    #else
-      if components.isEmpty {
-        path = "."
-      } else if components.first == Path.separator && components.count > 1 {
-        let p = components.joined(separator: Path.separator)
-        path = String(p[p.index(after: p.startIndex)...])
-      } else {
-        path = components.joined(separator: Path.separator)
-      }
-    #endif
+    if components.isEmpty {
+      path = "."
+    } else if components.first == Path.separator && components.count > 1 {
+      let p = components.joined(separator: Path.separator)
+      path = String(p[p.index(after: p.startIndex)...])
+    } else if isDiskDesignator(components.first) {
+      let p = components.joined(separator: Path.separator)
+      path = Path.separator + p
+    } else {
+      path = components.joined(separator: Path.separator)
+    }
     self.init(path)
   }
 }
@@ -291,7 +289,7 @@ extension Path {
   public var components: [String] {
     var result = NSString(string: path).pathComponents
     #if os(Windows)
-    if result.first == Path.separator {
+    if result.count >= 2 && result[0] == Path.separator && result[1].isDiskDesignator {
       result.removeFirst()
     }
     #endif
@@ -830,14 +828,13 @@ internal func +(lhs: String, rhs: String) -> Path {
 
     // Eats up trailing components of the left and leading ".." of the right side
     while lSlice.last != ".." && !lSlice.isEmpty && rSlice.first == ".." {
-      var absolutePathPrefixLength: Int = 1
       #if os(Windows)
-      // disk designator
-      absolutePathPrefixLength += 1
+        let trailingComponentIsNotDiskDesignator = lSlice.last?.isDiskDesignator == false
+      #else
+        let trailingComponentIsNotDiskDesignator = true
       #endif
-
-      if lSlice.count > absolutePathPrefixLength || lSlice.first != Path.separator {
-        // A leading "/" and disk designator (on Windows) are never popped
+      let trailingComponentIsNotRoot = lSlice.count > 1 || lSlice.last != Path.separator
+      if trailingComponentIsNotDiskDesignator && trailingComponentIsNotRoot {
         lSlice.removeLast()
       }
       if !rSlice.isEmpty {
@@ -854,13 +851,6 @@ internal func +(lhs: String, rhs: String) -> Path {
       }
     }
 
-    #if os(Windows)
-    // Remove leading "\" 
-    if lSlice.first == Path.separator {
-      lSlice.removeFirst()
-    }
-    #endif
-
     return Path(components: lSlice + rSlice)
   }
 }
@@ -872,29 +862,45 @@ extension Array {
 }
 
 // MARK: Windows support routines
-
+#if os(Windows)
 // MARK: Path conversion
 extension String {
+  /*
+  C: -> /C:
+  C:\ -> /C:
+  C:\Documents\Newsletters\Summer2018.pdf	-> /C:/Documents/Newsletters/Summer2018.pdf	
+  \Program Files\Custom Utilities\StringFinder.exe -> /Program Files/Custom Utilities/StringFinder.exe
+  2018\January.xlsx -> 2018/January.xlsx
+  ..\Publications\TravelBrochure.pdf -> ../Publications/TravelBrochure.pdf
+  C:\Projects\apilibrary\apilibrary.sln -> C:/Projects/apilibrary/apilibrary.sln
+
+  */
   internal var unixPath: String {
     if isEmpty { return self }
 
-    // split into parts and remove extraneous separators
-    let pathWithUnixSeparators = replacingOccurrences(of: "\\", with: Path.separator)
-    let components = pathWithUnixSeparators.components(separatedBy: Path.separator).filter{ !$0.isEmpty }
-    var result = components.joined(separator: Path.separator)
-    let firstComp = components[0]
-    // Windows abolute path begins with disk designator with pattern `[a-z]:`
-    if firstComp.count >= 2 && firstComp[firstComp.index(after: firstComp.startIndex)] == ":" {
-      result.insert(contentsOf: Path.separator, at: result.startIndex)
+    var path = self
+    if path.isRelativePathWithDiskDesignator {
+      path = getFullPath(path: path) ?? path      
     }
-    
+
+    var result = path.replacingOccurrences(of: "\\", with: Path.separator)
+
+    if result.hasDriverDesignatorPrefix {
+      result = Path.separator + result
+    }
+
+    if result != Path.separator && result.hasSuffix(Path.separator) {
+      result.removeLast()
+    }
+
     return result
   }
 
   internal var windowsPath: String {
     var result = self
-    if result.hasPrefix(Path.separator) {
-      result.removeFirst()
+    let maybeAbsolutePathWithDiskDesignator = String(dropFirst())
+    if maybeAbsolutePathWithDiskDesignator.hasDriverDesignatorPrefix {
+      result = maybeAbsolutePathWithDiskDesignator
     }
     return result
   }
@@ -902,9 +908,29 @@ extension String {
   internal var isDiskDesignator: Bool {
     return count == 2 && first!.isASCII && first!.isLetter && last == ":"
   }
+
+  internal var isRelativePathWithDiskDesignator: Bool {
+    if count < 3 {
+      return false
+    }
+
+    let third = self[index(startIndex, offsetBy: 2)]
+    return hasDriverDesignatorPrefix
+      && third != "\\" && third != "/"
+  }
+
+  internal var hasDriverDesignatorPrefix: Bool {
+    if count < 2 {
+      return false
+    }
+
+    let first = self[startIndex]
+    let second = self[index(after: startIndex)]
+    return first.isASCII && first.isLetter
+      && second == ":"
+  }
 }
 
-#if os(Windows)
 // MARK: String WCHAR support
 private extension Array where Array.Element == WCHAR {
   init(from string: String) {
@@ -974,6 +1000,27 @@ private func findFiles(pattern: String, body: (String, Bool) -> Void) {
   }
 
   FindClose(hFind)
+}
+
+func getFullPath(path: String) -> String? {
+  var buffer = UnsafeMutableBufferPointer<WCHAR>.allocate(capacity: 4096)
+
+  var resultLength = GetFullPathNameW(path.wide, 4096, buffer.baseAddress, nil)
+  if resultLength > 4096 {
+    buffer.deallocate()
+    
+    buffer = UnsafeMutableBufferPointer<WCHAR>.allocate(capacity: Int(resultLength))
+    resultLength = GetFullPathNameW(path.wide, resultLength, buffer.baseAddress, nil)
+  }
+
+  if resultLength == 0 {
+    buffer.deallocate()
+    return nil
+  }
+
+  let result = String(decodingCString: buffer.baseAddress!, as: UTF16.self)
+  buffer.deallocate()
+  return result
 }
 
 #endif

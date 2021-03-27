@@ -13,48 +13,23 @@ describe("PathKit") {
   let fixtures = Path(filePath).parent() + "Fixtures"
 
   #if os(Windows)
-    let somePlatformPath = "C:/Windows/System32"
-    let somePlatformPathComponents = ["C:", "Windows", "System32"]
-    let someNormalizedPath = "C:/Users/Public/Documents"
-    let someDenormalizedPath = "C:/Users/./Default/../Public/Documents"
-    let pathThatDoesNotExist = "C:/pathkit/test"
     let pathToExecutable = Path("C:/Windows/System32/cmd.exe")
     let chdirTarget = "C:/Users"
     let newLine = "\r\n"
-    let shortPath0 = "C:/Windows"
-    let shortPath1 = "D:/Windows"
     let normalizedRelativeSymlinkToFile = fixtures + "file"
-    let pathToSplitIntoComponents = "C:/a/b/c.d"
-    let componentsAfterSplittingThePath = ["C:", "a", "b", "c.d"]
-    let nonExistingTempFile = "C:/tmp/pathkit-testing"
     let tempDirectory = NSTemporaryDirectory()
     let pathClosedOnWrite = "C:/Users/PathKit.txt"
     let root: String = fixtures.components[0] + Path.separator
-    let longNonExistentPath = "C:/non/existing/directory/path"
-    let matchingPathPair = ("C:/Users", "C:/Users")
-    let nonMatchingPathPair = ("C:/Users", "C:")
     let userHomeDir = NSHomeDirectory()
+    let currentDrive = Path.current.components.first!
   #else
-    let somePlatformPath = "/usr/bin/swift"
-    let somePlatformPathComponents = ["/usr", "bin", "swift"]
-    let someNormalizedPath = "/usr/bin/swift"
-    let someDenormalizedPath = "/usr/./local/../bin/swift"
-    let pathThatDoesNotExist = "/pathkit/test"
     let pathToExecutable = fixtures + "permissions/executable"
     let chdirTarget = "/usr/bin"
     let newLine = "\n"
-    let shortPath0 = "/usr"
-    let shortPath1 = "/bin"
     let normalizedRelativeSymlinkToFile = fixtures + "symlinks/file"
-    let pathToSplitIntoComponents = "/a/b/c.d"
-    let componentsAfterSplittingThePath = ["/", "a", "b", "c.d"]
-    let nonExistingTempFile = "/tmp/pathkit-testing"
     let tempDirectory = "/tmp"
     let pathClosedOnWrite = "/"
     let root = "/"
-    let longNonExistentPath = "/non/existing/directory/path"
-    let matchingPathPair = ("/Users", "/Users")
-    let nonMatchingPathPair = ("/var", "~")
     let userHomeDir: String = "/Users/" + NSUserName()
   #endif
 
@@ -70,6 +45,7 @@ describe("PathKit") {
     try expect(Path.current.description) == FileManager().currentDirectoryPath
   }
 
+  #if os(Windows)
   $0.describe("Windows paths") {
     $0.it("can determine disk designator") {
       try expect("c:".isDiskDesignator) == true
@@ -83,15 +59,34 @@ describe("PathKit") {
     }
 
     $0.it("converts Windows path to Unix path") {
+      // root of drive C
       try expect("c:".unixPath) == "/c:"
       try expect("c:\\".unixPath) == "/c:"
+      // root of current drive
+      try expect("/".unixPath) == "/"
+      // absolute path on drive C
       try expect("c:\\Temp".unixPath) == "/c:/Temp"
       try expect("c:\\Temp\\".unixPath) == "/c:/Temp"
       try expect("c:/Temp/".unixPath) == "/c:/Temp"
+      // absolute path on current drive
+      try expect("/absolute/path/from/current/root".unixPath) == "/absolute/path/from/current/root"
+      // path relative to CWD
       try expect("Temp\\dir".unixPath) == "Temp/dir"
       try expect("Temp\\".unixPath) == "Temp"
+      // path relative to CWD on current drive
+      try expect("\(currentDrive)relative\\path".unixPath) == Path.separator + Path.current.string + "/relative/path"
+    }
+
+    $0.it("converts Unix path to Windows path") {
+      // absolute path
+      try expect("/c:/absolute/path".windowsPath) == "c:/absolute/path"
+      // absolute path from the root of the current drive
+      try expect("/absolute/path".windowsPath) == "/absolute/path"
+      // relative path from CWD
+      try expect("relative/path".windowsPath) == "relative/path"
     }
   }
+  #endif
 
   $0.describe("initialisation") {
     $0.it("can be initialised with no arguments") {
@@ -99,58 +94,67 @@ describe("PathKit") {
     }
 
     $0.it("can be initialised with a string") {
-      let path = Path(somePlatformPath)
-      try expect(path.description) == somePlatformPath      
+      let path = Path("/usr/bin/swift")
+      try expect(path.description) == "/usr/bin/swift"      
     }
 
-    $0.it("can be initialised with path components") {
-      let path = Path(components: somePlatformPathComponents)
-      try expect(path.description) == somePlatformPath
+    $0.it("can be initialised with path components") {     
+      let path = Path(components: ["/usr", "bin", "swift"])
+      try expect(path.description) == "/usr/bin/swift"
+      #if os(Windows)
+      let path2 = Path(components: ["C:", "Windows", "System32"])
+      try expect(path2.description) == "C:/Windows/System32"
+      #endif
     }
 
     #if os(Windows)
     $0.it("recognizes both unix & platform path separators") {
-      try expect(Path(somePlatformPath)) == Path("C:\\Windows\\System32")
+      try expect(Path("C:/Windows/System32")) == Path("C:\\Windows\\System32")
     }
     #endif
   }
 
   $0.describe("convertable") {
     $0.it("can be converted from a string literal") {
-      #if os(Windows)
-        let path: Path = "C:/Windows/System32"
-      #else
-        let path: Path = "/usr/bin/swift"
-      #endif
-      try expect(path.description) == somePlatformPath
+      let path: Path = "/usr/bin/swift"
+      try expect(path.description) == "/usr/bin/swift"
     }
 
     $0.it("can be converted to a string description") {
-      try expect(Path(somePlatformPath).description) == somePlatformPath      
+      try expect(Path("/usr/bin/swift").description) == "/usr/bin/swift"
+      #if os(Windows)
+      try expect(Path("C:/Windows/System32").description) == "C:/Windows/System32"      
+      #endif
     }
     
     $0.it("can be converted to a string") {
-      try expect(Path(somePlatformPath).string) == somePlatformPath      
+      try expect(Path("/usr/bin/swift").string) == "/usr/bin/swift"      
+      #if os(Windows)
+      try expect(Path("C:/Windows/System32").description) == "C:/Windows/System32"      
+      #endif
     }
     
     $0.it("can be converted to a url") {
-      try expect(Path(somePlatformPath).url) == URL(fileURLWithPath: somePlatformPath)         
+      try expect(Path("/usr/bin/swift").url) == URL(fileURLWithPath: "/usr/bin/swift")
+      #if os(Windows)
+      try expect(Path("C:/Windows/System32").url) == URL(fileURLWithPath: "C:/Windows/System32")
+      #endif
     }
   }
 
   $0.describe("Equatable") {
     $0.it("equates to an equal path") {
-      try expect(Path(shortPath0)) == Path(shortPath0)      
+      try expect(Path("/usr")) == Path("/usr")      
     }
 
     $0.it("doesn't equate to a non-equal path") {
-      try expect(Path(shortPath0)) != Path(shortPath1)     
+      try expect(Path("/usr")) != Path("/bin")     
     }
   }
 
   $0.describe("Hashable") {
     $0.it("exposes a hash value identical to an identical path") {
-      try expect(Path(shortPath0).hashValue) == Path(shortPath0).hashValue      
+      try expect(Path("/usr").hashValue) == Path("/usr").hashValue      
     }
   }
 
@@ -197,8 +201,16 @@ describe("PathKit") {
 
     }
 
+    #if os(Windows)
+    $0.describe("a relative path with disk designator") {
+      $0.it("eagerly resolved") {
+        try expect(Path("\(currentDrive)Test").string) == Path.current.string + "/Test"
+      }
+    }
+    #endif
+
     $0.describe("an absolute path") {
-      let path = Path(somePlatformPath)
+      let path = Path("/usr/bin/swift")
 
       $0.it("can be converted to an absolute path") {
         try expect(path.absolute()) == path
@@ -212,11 +224,29 @@ describe("PathKit") {
         try expect(path.isRelative) == false
       }
     }
+
+    #if os(Windows)
+    $0.describe("an absolute path with disk designator") {
+      let path = Path("C:/Windows/System32")
+
+      $0.it("can be converted to an absolute path") {
+        try expect(path.absolute()) == path
+      }
+
+      $0.it("is absolute") {
+        try expect(path.isAbsolute) == true
+      }
+
+      $0.it("is not relative") {
+        try expect(path.isRelative) == false
+      }
+    }
+    #endif
   }
 
   $0.it("can be normalized") {
-    let path = Path(someDenormalizedPath)
-    try expect(path.normalize()) == Path(someNormalizedPath)
+    let path = Path("/usr/./local/../bin/swift")
+    try expect(path.normalize()) == Path("/usr/bin/swift")
   }
 
   $0.it("can be abbreviated") {
@@ -295,7 +325,10 @@ describe("PathKit") {
 
   $0.it("can be split into components") {
     try expect(Path("a/b/c.d").components) == ["a", "b", "c.d"]
-    try expect(Path(pathToSplitIntoComponents).components) == componentsAfterSplittingThePath
+    try expect(Path("/a/b/c.d").components) == ["/", "a", "b", "c.d"]
+    #if os(Windows)
+    try expect(Path("C:/a/b/c.d").components) == ["C:", "a", "b", "c.d"]
+    #endif
     try expect(Path("~/a/b/c.d").components) == ["~", "a", "b", "c.d"]
   }
 
@@ -311,7 +344,7 @@ describe("PathKit") {
     }
 
     $0.it("can check if a path does not exist") {
-      let path = Path(pathThatDoesNotExist)      
+      let path = Path("/pathkit/test")      
       try expect(path.exists).to.beFalse()
     }
   }
@@ -401,7 +434,7 @@ describe("PathKit") {
     }
 
     $0.it("errors when you read from a non-existing file as NSData") {
-      let path = Path(tempDirectory) + "pathkit-testing" 
+      let path = Path(tempDirectory) + "pathkit-testing"
       try expect {
         try path.read() as Data
       }.toThrow()
@@ -415,7 +448,7 @@ describe("PathKit") {
     }
 
     $0.it("errors when you read from a non-existing file as a String") {
-      let path = Path(nonExistingTempFile)
+      let path = Path("/tmp/pathkit-testing")
       try expect {
         try path.read() as String
       }.toThrow()
@@ -471,7 +504,10 @@ describe("PathKit") {
     try expect((fixtures + "directory/child").parent()) == fixtures + "directory"
     try expect((fixtures + "symlinks/directory").parent()) == fixtures + "symlinks"
     try expect((fixtures + "directory/..").parent()) == fixtures + "directory/../.."
+    try expect(Path("/").parent()) == Path("/")
+    #if os(Windows)
     try expect(Path(root).parent()) == Path(root)
+    #endif
   }
 
   $0.it("can return the children") {
@@ -502,7 +538,7 @@ describe("PathKit") {
       }
 
       try expect(children.isEmpty).to.beTrue()
-      try expect(Path(longNonExistentPath).makeIterator().next()).to.beNil()      
+      try expect(Path("/non/existing/directory/path").makeIterator().next()).to.beNil()      
     }
   
     $0.it("with options") {
@@ -522,14 +558,14 @@ describe("PathKit") {
       }
 
       try expect(children.isEmpty).to.beTrue()
-      try expect(Path(longNonExistentPath).makeIterator().next()).to.beNil()      
+      try expect(Path("/non/existing/directory/path").makeIterator().next()).to.beNil()      
       #endif
     }
   }
 
   $0.it("can be pattern matched") {
-    try expect(Path(nonMatchingPathPair.0) ~= Path(nonMatchingPathPair.1)).to.beFalse()
-    try expect(Path(matchingPathPair.0) ~= Path(matchingPathPair.1)).to.beTrue()
+    try expect(Path("/var") ~= "~").to.beFalse()
+    try expect(Path("/Users") ~= "/Users").to.beTrue()
     try expect((Path.home + "..") ~= "~/..").to.beTrue()
   }
 
@@ -543,10 +579,17 @@ describe("PathKit") {
     try expect(Path("a/b")) == "a/" + "b"
 
     // Appending (to) absolute paths
+    try expect(Path("/")) == "/" + "/"
+    try expect(Path("/")) == "/" + ".."
+    try expect(Path("/a")) == "/" + "../a"
+    try expect(Path("/b")) == "a" + "/b"
+   
+    #if os(Windows)
     try expect(Path(root)) == root + root
     try expect(Path(root)) == root + ".."
     try expect(Path(root + "a")) == root + "../a"
     try expect(Path(root + "b")) == "a" + (root + "b")
+    #endif
 
     // Appending (to) '.'
     try expect(Path("a")) == "a" + "."
