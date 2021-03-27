@@ -108,9 +108,11 @@ describe("PathKit") {
       try expect(path.description) == somePlatformPath
     }
 
+    #if os(Windows)
     $0.it("recognizes both unix & platform path separators") {
       try expect(Path(somePlatformPath)) == Path("C:\\Windows\\System32")
     }
+    #endif
   }
 
   $0.describe("convertable") {
