@@ -29,7 +29,7 @@ describe("PathKit") {
     let nonExistingTempFile = "C:/tmp/pathkit-testing"
     let tempDirectory = NSTemporaryDirectory()
     let pathClosedOnWrite = "C:/Users/PathKit.txt"
-    let root = "C:"
+    let root = "C:/"
     let longNonExistentPath = "C:/non/existing/directory/path"
     let matchingPathPair = ("C:/Users", "C:/Users")
     let nonMatchingPathPair = ("C:/Users", "C:")
@@ -555,17 +555,10 @@ describe("PathKit") {
     try expect(Path("a/b")) == "a/" + "b"
 
     // Appending (to) absolute paths
-    #if os(Windows)
-      try expect(Path("C:/")) == "C:/" + "C:/"
-      try expect(Path("C:")) == "C:" + ".."
-      try expect(Path("C:/a")) == "C:" + "../a"
-      try expect(Path("C:/b")) == "a" + "C:/b"
-    #else
-      try expect(Path("/")) == "/" + "/"
-      try expect(Path("/")) == "/" + ".."
-      try expect(Path("/a")) == "/" + "../a"
-      try expect(Path("/b")) == "a" + "/b"
-    #endif
+    try expect(Path(root)) == root + root
+    try expect(Path(root)) == root + ".."
+    try expect(Path(root + "a")) == root + "../a"
+    try expect(Path(root + "b")) == "a" + (root + "b")
 
     // Appending (to) '.'
     try expect(Path("a")) == "a" + "."
