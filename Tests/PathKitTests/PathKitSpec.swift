@@ -33,6 +33,7 @@ describe("PathKit") {
     let longNonExistentPath = "C:/non/existing/directory/path"
     let matchingPathPair = ("C:/Users", "C:/Users")
     let nonMatchingPathPair = ("C:/Users", "C:")
+    let userHomeDir = NSHomeDirectory()
   #else
     let somePlatformPath = "/usr/bin/swift"
     let somePlatformPathComponents = ["/usr", "bin", "swift"]
@@ -54,6 +55,7 @@ describe("PathKit") {
     let longNonExistentPath = "/non/existing/directory/path"
     let matchingPathPair = ("/var", "~")
     let nonMatchingPathPair = ("/Users", "/Users")
+    let userHomeDir = "/Users/" + NSUserName()
   #endif
 
   $0.before {
@@ -175,10 +177,7 @@ describe("PathKit") {
       let path = Path("~")
 
       $0.it("can be converted to an absolute path") {
-        #if os(Windows)
-          let userHomeDir = NSHomeDirectory()
-          try expect(path.absolute().string) == userHomeDir
-        #elseif os(Linux)
+        #if os(Linux)
           if NSUserName() == "root" {
             try expect(path.absolute()) == "/root"		
           }
@@ -186,7 +185,7 @@ describe("PathKit") {
             try expect(path.absolute()) == "/home/" + NSUserName()
           }
         #else
-          try expect(path.absolute()) == "/Users/" + NSUserName()
+          try expect(path.absolute().string) == userHomeDir
         #endif
       }
 
