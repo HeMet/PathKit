@@ -190,7 +190,7 @@ extension Path {
     // that relative path will be appended as is
     return isSymlink ? result.normalize() : result
     #else
-    return results
+    return result
     #endif
   }
 
