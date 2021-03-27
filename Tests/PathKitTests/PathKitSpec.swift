@@ -176,7 +176,7 @@ describe("PathKit") {
 
       $0.it("can be converted to an absolute path") {
         #if os(Windows)
-          let userHomeDir = NSHomeDirectory().replacingOccurrences(of: Path.separator, with: "/")
+          let userHomeDir = NSHomeDirectory()
           try expect(path.absolute().string) == userHomeDir
         #elseif os(Linux)
           if NSUserName() == "root" {
