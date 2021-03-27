@@ -865,16 +865,13 @@ extension Array {
 #if os(Windows)
 // MARK: Path conversion
 extension String {
-  /*
-  C: -> /C:
-  C:\ -> /C:
-  C:\Documents\Newsletters\Summer2018.pdf	-> /C:/Documents/Newsletters/Summer2018.pdf	
-  \Program Files\Custom Utilities\StringFinder.exe -> /Program Files/Custom Utilities/StringFinder.exe
-  2018\January.xlsx -> 2018/January.xlsx
-  ..\Publications\TravelBrochure.pdf -> ../Publications/TravelBrochure.pdf
-  C:\Projects\apilibrary\apilibrary.sln -> C:/Projects/apilibrary/apilibrary.sln
-
-  */
+  /// Converts Windows path to Unix-like path.
+  ///
+  /// Steps:
+  /// - if path is relative path with disk designator
+  /// then path resolved
+  /// - all path separators replaced with `/`
+  /// - disk designator prepended with `/` if any
   internal var unixPath: String {
     if isEmpty { return self }
 
@@ -896,6 +893,9 @@ extension String {
     return result
   }
 
+  /// Converts Unix-like to Windows path
+  ///
+  /// Method removes leading `/` if it prepends disk designator.
   internal var windowsPath: String {
     var result = self
     let maybeAbsolutePathWithDiskDesignator = String(dropFirst())
@@ -1001,6 +1001,8 @@ private func findFiles(pattern: String, body: (String, Bool) -> Void) {
 
   FindClose(hFind)
 }
+
+// MARK: Getting absolute path
 
 func getFullPath(path: String) -> String? {
   var buffer = UnsafeMutableBufferPointer<WCHAR>.allocate(capacity: 4096)
