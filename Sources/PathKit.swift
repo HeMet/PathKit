@@ -925,7 +925,7 @@ private extension String {
 
 // MARK: Globbing
 
-func glob(pattern: String) -> [String] {
+private func glob(pattern: String) -> [String] {
   var components = Path(pattern).absolute().components
   let firstPattern = components.removeFirst()
   var result: [String] = []
