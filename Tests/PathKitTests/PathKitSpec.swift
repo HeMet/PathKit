@@ -53,9 +53,9 @@ describe("PathKit") {
     let pathClosedOnWrite = "/"
     let root = "/"
     let longNonExistentPath = "/non/existing/directory/path"
-    let matchingPathPair = ("/var", "~")
-    let nonMatchingPathPair = ("/Users", "/Users")
-    let userHomeDir = "/Users/" + NSUserName()
+    let matchingPathPair = ("/Users", "/Users")
+    let nonMatchingPathPair = ("/var", "~")
+    let userHomeDir: String = "/Users/" + NSUserName()
   #endif
 
   $0.before {
