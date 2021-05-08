@@ -105,6 +105,15 @@ path.write("Hello World!")
 let paths = Path.glob("*.swift")
 ```
 
+### Windows
+
+Additional configuration needed if you plan to run tests:
+
+```
+git clone -c core.symlinks=true -c core.hideDotFiles=true <repository url>
+```
+
+
 ### Contact
 
 Kyle Fuller

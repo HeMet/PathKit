@@ -4,7 +4,7 @@
 import Glibc
 
 let system_glob = Glibc.glob
-#else
+#elseif canImport(Darwin)
 import Darwin
 
 let system_glob = Darwin.glob
@@ -37,7 +37,7 @@ public struct Path {
   }
     
   internal init(_ path: String, fileSystemInfo: FileSystemInfo) {
-    self.path = path
+    self.path = path.asUnixPath()
     self.fileSystemInfo = fileSystemInfo
   }
 
@@ -47,6 +47,8 @@ public struct Path {
     
   /// Create a Path by joining multiple path components together
   public init<S : Collection>(components: S) where S.Iterator.Element == String {
+    let components = components.asUnixPathComponents()
+
     let path: String
     if components.isEmpty {
       path = "."
@@ -85,7 +87,7 @@ extension Path : ExpressibleByStringLiteral {
 
 extension Path : CustomStringConvertible {
   public var description: String {
-    return self.path
+    return self.path.asPlatformPath()
   }
 }
 
@@ -94,7 +96,7 @@ extension Path : CustomStringConvertible {
 
 extension Path {
   public var string: String {
-    return self.path
+    return self.path.asPlatformPath()
   }
 
   public var url: URL {
@@ -155,7 +157,15 @@ extension Path {
   ///   representation.
   ///
   public func normalize() -> Path {
-    return Path(NSString(string: self.path).standardizingPath)
+    let result = Path(NSString(string: self.path).standardizingPath)
+    #if os(Windows)
+    // It seems, symlinks resolved more agressively and can leave ".." too.
+    // Example: if self is symlink that points to '../<remaining path>' 
+    // that relative path will be appended as is
+    return isSymlink ? result.normalize() : result
+    #else
+    return result
+    #endif
   }
 
   /// De-normalizes the path, by replacing the current user home directory with "~".
@@ -167,8 +177,11 @@ extension Path {
     let rangeOptions: String.CompareOptions = fileSystemInfo.isFSCaseSensitiveAt(path: self) ?
       [.anchored] : [.anchored, .caseInsensitive]
     let home = Path.home.string
-    guard let homeRange = self.path.range(of: home, options: rangeOptions) else { return self }
-    let withoutHome = Path(self.path.replacingCharacters(in: homeRange, with: ""))
+
+    let path = self.path.asPlatformPath()
+
+    guard let homeRange = path.range(of: home, options: rangeOptions) else { return self }
+    let withoutHome = Path(path.replacingCharacters(in: homeRange, with: ""))
     
     if withoutHome.path.isEmpty || withoutHome.path == Path.separator {
         return Path("~")
@@ -246,7 +259,8 @@ extension Path {
   /// - Returns: all path components
   ///
   public var components: [String] {
-    return NSString(string: path).pathComponents
+    let comps = NSString(string: path).pathComponents
+    return comps.asPlatformPathComponents()
   }
 
   /// The file extension behind the last dot of the last component.
@@ -326,7 +340,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isReadable: Bool {
-    return Path.fileManager.isReadableFile(atPath: self.path)
+    return Path.fileManager.isReadableFile(atPath: self.string)
   }
 
   /// Test whether a path is writeable
@@ -336,7 +350,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isWritable: Bool {
-    return Path.fileManager.isWritableFile(atPath: self.path)
+    return Path.fileManager.isWritableFile(atPath: self.string)
   }
 
   /// Test whether a path is executable
@@ -346,7 +360,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isExecutable: Bool {
-    return Path.fileManager.isExecutableFile(atPath: self.path)
+    return Path.fileManager.isExecutableFile(atPath: self.string)
   }
 
   /// Test whether a path is deletable
@@ -356,7 +370,7 @@ extension Path {
   ///   file could not be determined.
   ///
   public var isDeletable: Bool {
-    return Path.fileManager.isDeletableFile(atPath: self.path)
+    return Path.fileManager.isDeletableFile(atPath: self.string)
   }
 }
 
@@ -587,6 +601,9 @@ extension Path {
 
 extension Path {
   public static func glob(_ pattern: String) -> [Path] {
+#if os(Windows)
+    return windowsGlob(pattern: pattern).map { Path($0) }
+#else
     var gt = glob_t()
     let cPattern = strdup(pattern)
     defer {
@@ -612,6 +629,7 @@ extension Path {
 
     // GLOB_NOMATCH
     return []
+#endif
   }
 
   public func glob(_ pattern: String) -> [Path] {
@@ -751,6 +769,9 @@ public func +(lhs: Path, rhs: String) -> Path {
 
 /// Appends a String fragment to another String to produce a new Path
 internal func +(lhs: String, rhs: String) -> Path {
+  let lhs = lhs.asUnixPath()
+  let rhs = rhs.asUnixPath()
+
   if rhs.hasPrefix(Path.separator) {
     // Absolute paths replace relative paths
     return Path(rhs)
@@ -769,8 +790,7 @@ internal func +(lhs: String, rhs: String) -> Path {
 
     // Eats up trailing components of the left and leading ".." of the right side
     while lSlice.last != ".." && !lSlice.isEmpty && rSlice.first == ".." {
-      if lSlice.count > 1 || lSlice.first != Path.separator {
-        // A leading "/" is never popped
+      if !lSlice.isPlatformPathRoot {
         lSlice.removeLast()
       }
       if !rSlice.isEmpty {
@@ -794,5 +814,51 @@ internal func +(lhs: String, rhs: String) -> Path {
 extension Array {
   var fullSlice: ArraySlice<Element> {
     return self[self.indices.suffix(from: 0)]
+  }
+}
+
+private extension String {
+  func asUnixPath() -> String {
+    #if os(Windows)
+    return windowsPathAsUnixPath()
+    #else
+    return self
+    #endif
+  }
+
+  func asPlatformPath() -> String {
+    #if os(Windows)
+    return unixPathAsWindowsPath()
+    #else
+    return self
+    #endif
+  }
+}
+
+private extension Collection where Element == String {
+  func asUnixPathComponents() -> [String] {
+    #if os(Windows)
+    return windowsPathComponentsAsUnixPathComponents()
+    #else
+    return self
+    #endif
+  }
+
+  func asPlatformPathComponents() -> [String] {
+    #if os(Windows)
+    return unixPathComponentsAsWindowsPathComponents()
+    #else
+    return self
+    #endif
+  }
+}
+
+extension RandomAccessCollection where Element == String {
+  var isPlatformPathRoot: Bool {
+    #if os(Windows)
+    return isWindowsPathRoot
+    #else
+    return count == 1 && last == Path.separator
+    #endif
   }
 }
