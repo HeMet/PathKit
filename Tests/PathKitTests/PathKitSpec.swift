@@ -16,7 +16,7 @@ describe("PathKit") {
     let pathToExecutable = Path("C:/Windows/System32/cmd.exe")
     let chdirTarget = "C:/Users"
     let newLine = "\r\n"
-    let normalizedRelativeSymlinkToFile = fixtures + "file"
+    let normalizedRelativeSymlinkToFile = fixtures + "symlinks/../file"
     let tempDirectory = NSTemporaryDirectory()
     let pathClosedOnWrite = "C:/Users/PathKit.txt"
     let root: String = fixtures.components[0] + Path.separator

@@ -157,15 +157,7 @@ extension Path {
   ///   representation.
   ///
   public func normalize() -> Path {
-    let result = Path(NSString(string: self.path).standardizingPath)
-    #if os(Windows)
-    // It seems, symlinks resolved more agressively and can leave ".." too.
-    // Example: if self is symlink that points to '../<remaining path>' 
-    // that relative path will be appended as is
-    return isSymlink ? result.normalize() : result
-    #else
-    return result
-    #endif
+    return Path(NSString(string: self.path).standardizingPath)
   }
 
   /// De-normalizes the path, by replacing the current user home directory with "~".
